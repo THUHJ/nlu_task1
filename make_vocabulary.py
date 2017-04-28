@@ -1,7 +1,7 @@
 # nlu_task1
 f = open("../data/sentences.train",'r')
 line = f.readline()
-other = [',','.','!','?','`','\'\'']
+other = [',','.','!','?','`','\'\'','\"']
 vocabulary = {}
 while line:
 	
