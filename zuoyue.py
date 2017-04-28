@@ -35,10 +35,18 @@ bias = tf.Variable(tf.random_normal([n_vocab, 1]))
 
 # Define RNN computation process 
 def RNN(x, weight, bias):
+
 	x_one_hot = tf.one_hot(x, n_vocab)
-	inputs = tf.unstack(x_one_hot, axis = 0)
-	lstm_cell = rnn.BasicLSTMCell(n_hidden)
-	outputs, states = rnn.static_rnn(lstm_cell, inputs, dtype = tf.float32)
+	inputs = tf.unstack(x_one_hot, axis = 1)
+
+	lstm_cell = rnn.BasicLSTMCell(n_hidden, reuse = True)
+
+	outputs = []
+	state = lstm_cell.zero_state(batch_size, dtype = tf.float32)
+	for item in inputs:
+		output, state = lstm_cell(item, state)
+		outputs.append(output)
+	# outputs, states = rnn.static_rnn(lstm_cell, inputs, dtype = tf.float32)
 	final_outputs = [tf.transpose(tf.matmul(weight, tf.transpose(outputs[i][0: n_steps - 1, :])) + bias) for i in range(len(outputs))]
 	return tf.reshape(final_outputs, shape = [batch_size, n_steps - 1, n_vocab])
 
