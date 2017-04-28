@@ -17,7 +17,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 # Set learning parameters
 learning_rate  = 1e-2
 training_iters = 5e5
-batch_size     = 64
+batch_size     = 32
 display_step   = 10
 
 # Set network parameters
@@ -38,6 +38,8 @@ def RNN(x, weight, bias):
 	x_one_hot = tf.one_hot(x, n_vocab)
 	inputs = tf.unstack(x_one_hot, axis = 0)
 	lstm_cell = rnn.BasicLSTMCell(n_hidden)
+	lstm_cell.zero_state()
+	for i in range
 	outputs, states = rnn.static_rnn(lstm_cell, inputs, dtype = tf.float32)
 	final_outputs = [tf.transpose(tf.matmul(weight, tf.transpose(outputs[i][0: n_steps - 1, :])) + bias) for i in range(len(outputs))]
 	return tf.reshape(final_outputs, shape = [batch_size, n_steps - 1, n_vocab])
@@ -50,7 +52,7 @@ cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits = pred, lab
 optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate).minimize(cost)
 
 # Evaluate model
-correct_pred = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
+correct_pred = tf.equal(tf.argmax(pred, 2), tf.argmax(y, 2))
 accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
 # Initialize the variables
