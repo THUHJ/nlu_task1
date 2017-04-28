@@ -5,6 +5,8 @@
 # Import packages
 from __future__ import print_function
 import tensorflow as tf
+from tensorflow.contrib import rnn
+
 import random
 import numpy as np
 
@@ -14,45 +16,33 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 # Set learning parameters
 learning_rate  = 1e-2
-training_iters = 1e5  
-batch_size     = 16
+training_iters = 5e5
+batch_size     = 64
 display_step   = 10
 
 # Set network parameters
-n_vocab        = 20    # vocabulary size (shape of single sentence: 20k * 30)
-n_steps        = 10    # sentence length
+n_vocab        = 100   # vocabulary size (shape of single sentence: 20k * 30)
+n_steps        = 20    # sentence length
 n_hidden       = 64    # dimension of hidden layer cell
 
 # Create tf graph input
 x = tf.placeholder(tf.int32, [batch_size, n_steps])
-y = tf.placeholder(tf.float32, [n_steps * batch_size, n_vocab])
+y = tf.placeholder(tf.float32, [batch_size, n_steps - 1, n_vocab])
 
-# Define weights and bias
-weights = {
-	'i': tf.Variable(tf.random_normal([n_hidden, n_vocab])), \
-	'h': tf.Variable(tf.random_normal([n_hidden, n_hidden])), \
-	'o': tf.Variable(tf.random_normal([n_vocab, n_hidden])) \
-}
-bias = {
-	'h': tf.Variable(tf.random_normal([n_hidden, 1]))
-}
+# Define output weights and bias
+weight = tf.Variable(tf.random_normal([n_vocab, n_hidden]))
+bias = tf.Variable(tf.random_normal([n_vocab, 1]))
 
-# Define LSTM Cell
-
-# Define RNN computation process
-def RNN(x, weights, bias):
+# Define RNN computation process 
+def RNN(x, weight, bias):
 	x_one_hot = tf.one_hot(x, n_vocab)
-	batch_inputs = tf.unstack(x_one_hot, axis = 0)
-	rnn_outputs = []
-	for batch_input in batch_inputs:
-		rnn_inputs = tf.unstack(batch_input, axis = 0)
-		state = bias['h']
-		for rnn_input in rnn_inputs:
-			state = tf.tanh(tf.add(tf.matmul(weights['i'], tf.reshape(rnn_input, shape = [n_vocab, 1])), tf.matmul(weights['h'], state)))
-			rnn_outputs.append(tf.matmul(weights['o'], state))
-	return tf.transpose(tf.concat(rnn_outputs, axis = 1))
+	inputs = tf.unstack(x_one_hot, axis = 0)
+	lstm_cell = rnn.BasicLSTMCell(n_hidden)
+	outputs, states = rnn.static_rnn(lstm_cell, inputs, dtype = tf.float32)
+	final_outputs = [tf.transpose(tf.matmul(weight, tf.transpose(outputs[i][0: n_steps - 1, :])) + bias) for i in range(len(outputs))]
+	return tf.reshape(final_outputs, shape = [batch_size, n_steps - 1, n_vocab])
 
-pred = RNN(x, weights, bias)
+pred = RNN(x, weight, bias)
 print("Network Defined!")
 
 # Define loss and optimizer
@@ -74,25 +64,28 @@ with tf.Session() as sess:
 	# Keep training until reach max iterations
 	while step * batch_size < training_iters:
 
-		a = random.randint(1, n_vocab)
-		batch_x = np.array([(i + a) % n_vocab for i in range(batch_size * n_steps)])
-		batch_y = np.zeros((batch_size * n_steps, n_vocab))
-		for i in range(batch_size * n_steps):
-			batch_y[i - 1][batch_x[i]] = 1
-		batch_x = batch_x.reshape((batch_size, n_steps))
+		batch_x = np.zeros((batch_size, n_steps), dtype = np.int32)
+		batch_y = np.zeros((batch_size, n_steps - 1, n_vocab))
+		for i in range(batch_size):
+			batch_x[i, 0] = random.randint(0, n_vocab - 1)
+			for j in range(1, n_steps):
+				batch_x[i, j] = (batch_x[i, j - 1] + 1) % n_vocab
+				batch_y[i, j - 1, batch_x[i, j]] = 1
+		# print(batch_x)
+		# print(batch_y)
 		# print("Data Done!")
 
 		sess.run(optimizer, feed_dict = {x: batch_x, y: batch_y})
 		# print("Optimize Done!")
 		if step % display_step == 0:
 			# Calculate batch accuracy
-			acc = sess.run(accuracy, feed_dict={x: batch_x, y: batch_y})
+			acc = sess.run(accuracy, feed_dict = {x: batch_x, y: batch_y})
 			# Calculate batch loss
-			loss = sess.run(cost, feed_dict={x: batch_x, y: batch_y})
+			loss = sess.run(cost, feed_dict = {x: batch_x, y: batch_y})
 			print(
 				"Iter " + str(step * batch_size) + ", Minibatch Loss= " + \
 				"{:.6f}".format(loss) + ", Training Accuracy= " + \
-				"{:.5f}".format(acc) \
+				"{:.6f}".format(acc) \
 			)
 		step += 1
 	print("Optimization Finished!")
