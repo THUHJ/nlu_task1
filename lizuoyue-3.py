@@ -15,10 +15,10 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 # Set learning parameters
-learning_rate  = 1e-2
-training_iters = 5e5
-batch_size     = 32
-display_step   = 10
+learning_rate  = 1e-2  # 
+training_iters = 5e5   # 
+batch_size     = 32    # 
+display_step   = 10    # 
 
 # Set network parameters
 n_vocab        = 100   # vocabulary size
@@ -29,28 +29,32 @@ n_hidden       = 64    # dimension of hidden layer cell
 x = tf.placeholder(tf.int32, [batch_size, n_steps])
 y = tf.placeholder(tf.float32, [batch_size, n_steps - 1, n_vocab])
 
-# Define output weights and bias
-weight = tf.Variable(tf.random_normal([n_vocab, n_hidden]))
-bias = tf.Variable(tf.random_normal([n_vocab, 1]))
+# Define output weight and bias
+output_weight = tf.Variable(tf.random_normal([n_vocab, n_hidden]))
+output_bias = tf.Variable(tf.random_normal([n_vocab, 1]))
+
+# Define LSTM cell weights and biases
+with tf.variable_scope("basic_lstm_cell"):
+	weights = tf.get_variable("weights", [n_vocab + n_hidden, 4 * n_hidden])
+	biases = tf.get_variable("biases", [4 * n_hidden])
 
 # Define RNN computation process 
-def RNN(x, weight, bias):
+def RNN(x, output_weight, output_bias):
 
 	x_one_hot = tf.one_hot(x, n_vocab)
 	inputs = tf.unstack(x_one_hot, axis = 1)
 
-	lstm_cell = rnn.BasicLSTMCell(n_hidden, reuse = True)
-
+	cell = rnn.BasicLSTMCell(n_hidden, reuse=True)
 	outputs = []
-	state = lstm_cell.zero_state(batch_size, dtype = tf.float32)
+	state = cell.zero_state(batch_size, dtype = tf.float32)
 	for item in inputs:
-		output, state = lstm_cell(item, state)
+		output, state = cell(item, state)
+		print(output.shape)
 		outputs.append(output)
-	# outputs, states = rnn.static_rnn(lstm_cell, inputs, dtype = tf.float32)
-	final_outputs = [tf.transpose(tf.matmul(weight, tf.transpose(outputs[i][0: n_steps - 1, :])) + bias) for i in range(len(outputs))]
+	final_outputs = [tf.transpose(tf.matmul(output_weight, tf.reshape(tf.transpose(outputs[j][i, :]), shape = [n_hidden, 1])) + output_bias) for i in range(batch_size) for j in range(len(outputs) - 1)]
 	return tf.reshape(final_outputs, shape = [batch_size, n_steps - 1, n_vocab])
 
-pred = RNN(x, weight, bias)
+pred = RNN(x, output_weight, output_bias)
 print("Network Defined!")
 
 # Define loss and optimizer
