@@ -15,10 +15,10 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 # Set learning parameters
-learning_rate  = 3e-3  # 
-training_iters = 1e5   # 
-batch_size     = 512   # 
-display_step   = 1     # 
+learning_rate  = 3e-3
+training_iters = 1e5
+batch_size     = 512
+display_step   = 1
 
 # Set network parameters
 n_vocab        = 1000  # vocabulary size
@@ -29,43 +29,28 @@ n_hidden       = 256   # dimension of hidden layer cell
 x = tf.placeholder(tf.int32, [batch_size, n_steps])
 y = tf.placeholder(tf.float32, [batch_size, n_steps - 1, n_vocab])
 
-# Define output weight and bias
-output_weight = tf.Variable(tf.random_normal([n_vocab, n_hidden]))
-output_bias = tf.Variable(tf.random_normal([n_vocab, 1]))
-
-# Define LSTM cell weights and biases
-with tf.variable_scope("basic_lstm_cell"):
-	weights = tf.get_variable("weights", [n_vocab + n_hidden, 4 * n_hidden])
-	biases = tf.get_variable("biases", [4 * n_hidden])
+# Define output weights and bias
+weight = tf.Variable(tf.random_normal([n_vocab, n_hidden]))
+bias = tf.Variable(tf.random_normal([n_vocab, 1]))
 
 # Define RNN computation process 
-def RNN(x, output_weight, output_bias):
-
+def RNN(x, weight, bias):
 	x_one_hot = tf.one_hot(x, n_vocab)
-	inputs = tf.unstack(x_one_hot, axis = 1)
-
-	cell = rnn.BasicLSTMCell(n_hidden, reuse = True)
-	outputs = []
-	state = cell.zero_state(batch_size, dtype = tf.float32)
-	for item in inputs:
-		output, state = cell(item, state)
-		outputs.append(output)
-	final_outputs = [tf.transpose(tf.matmul(output_weight, tf.reshape(tf.transpose(outputs[j][i, :]), shape = [n_hidden, 1])) + output_bias) for i in range(batch_size) for j in range(len(outputs) - 1)]
+	inputs = tf.unstack(x_one_hot, axis = 0)
+	lstm_cell = rnn.BasicLSTMCell(n_hidden)
+	outputs, states = rnn.static_rnn(lstm_cell, inputs, dtype = tf.float32)
+	final_outputs = [tf.transpose(tf.matmul(weight, tf.transpose(outputs[i][0: n_steps - 1, :])) + bias) for i in range(len(outputs))]
 	return tf.reshape(final_outputs, shape = [batch_size, n_steps - 1, n_vocab])
 
-pred = RNN(x, output_weight, output_bias)
+pred = RNN(x, weight, bias)
 print("Network Defined!")
-
-# Define loss and optimizer
-cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits = pred, labels = y))
-optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate).minimize(cost)
 
 # Evaluate model
 correct_pred = tf.equal(tf.argmax(pred, 2), tf.argmax(y, 2))
 accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
-# Initialize the variables
-init = tf.global_variables_initializer()
+# Add ops to save and restore all the variables
+saver = tf.train.Saver()
 
 # Construct vocabulary index dictionary
 vocabulary = {}
@@ -78,16 +63,17 @@ while line:
 	line  = f.readline()
 f.close()
 
-f = open("../data/sentences.train", 'r')
+f = open("../data/sentences.eval", 'r')
 
 # Launch the graph
-print("Start Training!")
+print("Start Predicting!")
 with tf.Session() as sess:
-	sess.run(init)
-	step = 1
-	# Keep training until reach max iterations
-	while step * batch_size < training_iters:
 
+	# Restore variables from disk.
+	saver.restore(sess, "model.ckpt")
+	print("Model restored.")
+
+	for i in range(100):
 		batch_x = []
 		while len(batch_x) < batch_size:
 			line = f.readline()
@@ -117,24 +103,6 @@ with tf.Session() as sess:
 			for j in range(1, n_steps):
 				# batch_x[i, j] = (batch_x[i, j - 1] + 1) % n_vocab
 				batch_y[i, j - 1, batch_x[i, j]] = 1
-		# print(batch_x)
-		# print(batch_y)
-		# print("Data Done!")
 
-		sess.run(optimizer, feed_dict = {x: batch_x, y: batch_y})
-		# print("Optimize Done!")
-		if step % display_step == 0:
-			# Calculate batch accuracy
-			acc = sess.run(accuracy, feed_dict = {x: batch_x, y: batch_y})
-			# Calculate batch loss
-			loss = sess.run(cost, feed_dict = {x: batch_x, y: batch_y})
-			print(
-				"Iter " + str(step * batch_size) + ", Minibatch Loss = " + \
-				"{:.6f}".format(loss) + ", Training Accuracy = " + \
-				"{:.6f}".format(acc) \
-			)
-		step += 1
-	print("Optimization Finished!")
-
-	save_path = saver.save(sess, "model.ckpt")
-	print("Model saved in file: %s" % save_path)
+		acc = sess.run(accuracy, feed_dict = {x: batch_x, y: batch_y})
+		print(acc)

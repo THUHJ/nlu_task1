@@ -23,6 +23,6 @@ vocabulary["<unk>"] = 9999996
 vocabulary = sorted(vocabulary.items(), key = lambda d: d[1], reverse = True)
 
 out = open("vocabulary.txt", 'w')
-for i in range(20000):
+for i in range(1000):
 	out.write(vocabulary[i][0] + "\n")
 out.close()
