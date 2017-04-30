@@ -44,7 +44,7 @@ def RNN(x, output_weight, output_bias):
 	x_one_hot = tf.one_hot(x, n_vocab)
 	inputs = tf.unstack(x_one_hot, axis = 1)
 
-	cell = rnn.BasicLSTMCell(n_hidden)
+	cell = rnn.BasicLSTMCell(n_hidden, reuse = True)
 	outputs = []
 	state = cell.zero_state(batch_size, dtype = tf.float32)
 	for item in inputs:
