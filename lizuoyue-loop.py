@@ -107,7 +107,7 @@ with tf.Session() as sess:
 				while (len(code) < 29):
 					code.append(vocabulary["<pad>"])
 				code.append(vocabulary["<eos>"])
-			batch_x.append(code)
+				batch_x.append(code)
 
 		batch_x = np.array(batch_x)
 		# batch_x = np.zeros((batch_size, n_steps), dtype = np.int32)
