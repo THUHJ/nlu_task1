@@ -15,15 +15,15 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 # Set learning parameters
-learning_rate  = 1e-2
-training_iters = 5e5
-batch_size     = 64
-display_step   = 10
+learning_rate  = 3e-3
+training_iters = 1e5
+batch_size     = 512
+display_step   = 1
 
 # Set network parameters
-n_vocab        = 20000 # vocabulary size
+n_vocab        = 1000  # vocabulary size
 n_steps        = 30    # sentence length
-n_hidden       = 512   # dimension of hidden layer cell
+n_hidden       = 256   # dimension of hidden layer cell
 
 # Create tf graph input
 x = tf.placeholder(tf.int32, [batch_size, n_steps])
@@ -55,6 +55,9 @@ accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
 # Initialize the variables
 init = tf.global_variables_initializer()
+
+# Add ops to save and restore all the variables
+saver = tf.train.Saver()
 
 # Construct vocabulary index dictionary
 vocabulary = {}
@@ -96,7 +99,7 @@ with tf.Session() as sess:
 				while (len(code) < 29):
 					code.append(vocabulary["<pad>"])
 				code.append(vocabulary["<eos>"])
-			batch_x.append(code)
+				batch_x.append(code)
 
 		batch_x = np.array(batch_x)
 		# batch_x = np.zeros((batch_size, n_steps), dtype = np.int32)
@@ -118,12 +121,12 @@ with tf.Session() as sess:
 			# Calculate batch loss
 			loss = sess.run(cost, feed_dict = {x: batch_x, y: batch_y})
 			print(
-				"Iter " + str(step * batch_size) + ", Minibatch Loss= " + \
-				"{:.6f}".format(loss) + ", Training Accuracy= " + \
+				"Iter " + str(step * batch_size) + ", Minibatch Loss = " + \
+				"{:.6f}".format(loss) + ", Training Accuracy = " + \
 				"{:.6f}".format(acc) \
 			)
 		step += 1
 	print("Optimization Finished!")
 
-	# Calculate accuracy for test set
-	# 
+	save_path = saver.save(sess, "model.ckpt")
+	print("Model saved in file: %s" % save_path)
