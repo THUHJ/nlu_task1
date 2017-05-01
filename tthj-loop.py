@@ -7,7 +7,7 @@ num_steps = 30
 keep_prob = 1
 batch_size = 64
 vocab_size = 20
-training_iters = 100000
+training_iters = 100
 display_step = 1
 learning_rate = 3e-3
 
