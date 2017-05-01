@@ -99,7 +99,8 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 	step = 1
 
 	#last_state  = cell.zero_state(batch_size, tf.float32)
-	last_state =  tf.contrib.rnn.LSTMStateTuple(np.zeros([batch_size,hidden_size]),np.zeros([batch_size,hidden_size]))
+	last_state = ""
+	#last_state =  tf.contrib.rnn.LSTMStateTuple(np.zeros([batch_size,hidden_size]),np.zeros([batch_size,hidden_size]))
 	# Keep training until reach max iterations
 	while step * batch_size < training_iters:
 
@@ -134,8 +135,10 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 				batch_y[i, j - 1] =  batch_x[i, j]
 		# print(batch_x)
 		# print(batch_y)
-		# print("Data Done!")
-		feed_dict =  {input_data: batch_x, targets: batch_y,initial_state:last_state}
+		# print("Data Done!") 
+		feed_dict =  {input_data: batch_x, targets: batch_y}
+		if (last_state!=""):
+			feed_dict =  {input_data: batch_x, targets: batch_y,initial_state:last_state}
 		sess.run(train_op, feed_dict =feed_dict)
 
 
@@ -158,7 +161,7 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 		
 		step += 1
 		last_state = sess.run(state, feed_dict =feed_dict)
-		#print (last_state)
+		#print (last_state[0].shape())
 		#print last_state.shpe()
 
 	print("Optimization Finished!")
