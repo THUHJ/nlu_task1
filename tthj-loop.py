@@ -51,7 +51,7 @@ gradients, variables = zip(*optimizer.compute_gradients(loss))
 gradients, _ = tf.clip_by_global_norm(gradients, 10.0)
 train_op = optimizer.apply_gradients(zip(gradients, variables))
 
-pred = tf.reshape(logits,[batch_size , (num_steps-1)])
+pred = tf.reshape(logits,[batch_size , (num_steps-1), vocab_size])
 correct_pred = tf.equal(tf.argmax(pred, 2),tf.to_int64(targets)) 
 accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
