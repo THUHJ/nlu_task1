@@ -92,14 +92,14 @@ with tf.Session() as sess:
 				line = f.readline()
 
 			words = line.strip().split(' ')
-			if (len(words) <= 28):
+			if (len(words) <= num_steps-2):
 				code = [vocabulary["<bos>"]]
 				for word in words:
 					if word in vocabulary:
 						code.append(vocabulary[word])
 					else:
 						code.append(vocabulary["<unk>"])
-				while (len(code) < 29):
+				while (len(code) < num_steps-1):
 					code.append(vocabulary["<pad>"])
 				code.append(vocabulary["<eos>"])
 				batch_x.append(code)
