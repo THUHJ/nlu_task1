@@ -51,7 +51,7 @@ gradients, variables = zip(*optimizer.compute_gradients(loss))
 gradients, _ = tf.clip_by_global_norm(gradients, 10.0)
 train_op = optimizer.apply_gradients(zip(gradients, variables))
 
-correct_pred = tf.equal(tf.argmax(logits, 1),targets) 
+correct_pred = tf.equal(tf.argmax(logits, 1),tf.to_int64(targets)) 
 accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
 
