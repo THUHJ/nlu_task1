@@ -16,7 +16,7 @@ import random
 print("Import packages ... Done!")
 
 # Set learning parameters
-learning_rate  = 1e-3  # learning rate
+learning_rate  = 5e-4  # learning rate
 training_iters = 2e5   # training iters
 global_norm    = 10.0  # global norm
 disp_step      = 1     # display step
