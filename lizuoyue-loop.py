@@ -12,11 +12,12 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import tensorflow as tf
 import numpy as np
 import random
+np.set_printoptions(threshold = 30)
 
 print("Import packages ... Done!")
 
 # Set learning parameters
-learning_rate  = 3e-3  # learning rate
+learning_rate  = 1e-1  # learning rate
 training_iters = 2e5   # training iters
 global_norm    = 10.0  # global norm
 disp_step      = 1     # display step
@@ -28,7 +29,6 @@ emb_size       = 100   # word embedding size
 seq_length     = 30    # sequence length
 state_size     = 512   # hidden state size
 keep_prob      = 1.0   # for dropout wrapper
-s_flag         = False # for saving states
 
 # Define RNN network input and output
 x = tf.placeholder(tf.int32  , [None, seq_length    ])
@@ -53,19 +53,12 @@ input_emb   = tf.nn.embedding_lookup(emb_weight, x)
 input_seq   = tf.unstack(input_emb, axis = 1)
 lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, forget_bias = 0.0, reuse = True)
 lstm_cell   = tf.contrib.rnn.DropoutWrapper(lstm_cell, output_keep_prob = keep_prob)
-state       = None
-if not s_flag:
-	state   = lstm_cell.zero_state(batch_size, tf.float32)
-	s_flag  = True
-	print("AAAAAAA")
-else:
-	state   = state_save
-	print("BBBBBBB")
+state       = lstm_cell.zero_state(batch_size, tf.float32)
 output_seq  = []
 for input_unit in input_seq:
 	output_unit, state = lstm_cell(input_unit, state)
 	output_seq.append(output_unit)
-state_save  = state
+last_state  = state
 output_seq  = tf.transpose(output_seq[0: len(output_seq) - 1], [1, 0, 2])
 output_seq  = tf.reshape(output_seq, [-1, state_size])
 pred_logits = tf.matmul(output_seq, out_weight) + out_bias
@@ -85,17 +78,18 @@ accuracy  = tf.reduce_mean(tf.cast(true_pred, tf.float32))
 
 # Initialize the variables
 init = tf.global_variables_initializer()
-init_state = np.zeros((2, batch_size, state_size))
 
 print("Define loss, optimizer and evaluate function ... Done!")
 
 # Construct vocabulary index dictionary
 vocabulary = {}
+look_up = []
 f = open("vocabulary.txt", 'r')
 line = f.readline()
 idx = 0
 while line:
-	vocabulary[line.strip()] = idx;
+	look_up.append(line.strip())
+	vocabulary[look_up[idx]] = idx;
 	idx += 1
 	line  = f.readline()
 f.close()
@@ -145,14 +139,21 @@ with tf.Session() as sess:
 		batch_x = np.array(batch_x)
 		batch_y = batch_x[:, 1: seq_length]
 
-		sess.run(optimizer, feed_dict = {x: batch_x, y: batch_y})
-		print(sess.run(y_one_col, feed_dict = {x: batch_x, y: batch_y}))
-		print(sess.run(tf.argmax(pred_logits, 1), feed_dict = {x: batch_x, y: batch_y}))
+		if step == 1:
+			feed_dict = {x: batch_x, y: batch_y}
+		else:
+			feed_dict = {x: batch_x, y: batch_y, state: state_feed}
+
+		sess.run(optimizer, feed_dict = feed_dict)
+
+		print(np.array(sess.run(y_one_col, feed_dict = feed_dict)).reshape([-1, seq_length - 1]))
+		print(np.array(sess.run(tf.argmax(pred_logits, 1), feed_dict = feed_dict)).reshape([-1, seq_length - 1]))
+
 		if step % disp_step == 0:
 			# Calculate batch accuracy
-			acc = sess.run(accuracy, feed_dict = {x: batch_x, y: batch_y})
+			acc = sess.run(accuracy, feed_dict = feed_dict)
 			# Calculate batch loss
-			cost = sess.run(loss, feed_dict = {x: batch_x, y: batch_y})
+			cost = sess.run(loss, feed_dict = feed_dict)
 			print(
 				"Iter " + str(step * batch_size) + ", Loss = " + \
 				"%6f" % cost + ", Accuracy = " + \
@@ -160,7 +161,9 @@ with tf.Session() as sess:
 			)
 		step += 1
 
+		state_feed = sess.run(state, feed_dict = feed_dict)
+
 	print("Optimization Finished!")
 
-	save_path = saver.save(sess, "model.ckpt")
+	save_path = saver.save(sess, "lizuoyue-model.ckpt")
 	print("Model saved in file: %s" % save_path)
