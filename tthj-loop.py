@@ -2,14 +2,14 @@ import tensorflow as tf
 import numpy as np
 
 
-size = 128
-num_steps = 10
-keep_prob = 0.5
+size = 256
+num_steps = 30
+keep_prob = 1
 batch_size = 64
 vocab_size = 20
 training_iters = 100000
 display_step = 1
-learning_rate = 1e-3
+learning_rate = 3e-3
 
 
 
