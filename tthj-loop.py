@@ -2,7 +2,8 @@ import tensorflow as tf
 import numpy as np
 
 
-size = 256
+word_embedding_size = 100
+hidden_size = 512
 num_steps = 30
 keep_prob = 1
 batch_size = 64
@@ -13,30 +14,38 @@ learning_rate = 3e-3
 
 
 
-lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(size, forget_bias=0.0,state_is_tuple=True)
-lstm_cell = tf.nn.rnn_cell.DropoutWrapper(
+lstm_cell = tf.contrib.rnn.BasicLSTMCell(hidden_size, forget_bias=0.0,state_is_tuple=True)
+lstm_cell = tf.contrib.rnn.DropoutWrapper(
     lstm_cell, output_keep_prob=keep_prob)
 #cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * num_steps, state_is_tuple=True)
 cell = lstm_cell
 
 initial_state = cell.zero_state(batch_size, tf.float32)
-embedding = tf.get_variable("embedding", [vocab_size, size])
+embedding = tf.get_variable("embedding", [vocab_size, word_embedding_size])
+
 # input_data: [batch_size, num_steps]
 # targets： [batch_size, num_steps]
 input_data = tf.placeholder(tf.int32, [batch_size, num_steps])
 targets = tf.placeholder(tf.int32, [batch_size, num_steps-1])
-inputs = tf.nn.embedding_lookup(embedding, input_data)
+inputs = tf.nn.embedding_lookup(embedding, input_data)   #batch_size * num_steps * word_embedding_size
+
+w1 = tf.get_variable(
+        "w1", [word_embedding_size, hidden_size], dtype=tf.float32)
+b1 = tf.get_variable("b1", [hidden_size], dtype=tf.float32)
+
+
 outputs = []
 state = initial_state
 with tf.variable_scope("RNN"):
 	for time_step in range(num_steps-1):
 		if time_step > 0: tf.get_variable_scope().reuse_variables()
-		(cell_output, state) = cell(inputs[:, time_step, :], state)
+		act_input = tf.matmul(inputs[:, time_step, :], w1) + b1
+		(cell_output, state) = cell(act_input, state)
 		outputs.append(cell_output)
 
-output = tf.reshape(tf.concat(1, outputs), [-1, size])
+output = tf.reshape(tf.concat(outputs,1), [-1, hidden_size])
 softmax_w = tf.get_variable(
-        "softmax_w", [size, vocab_size], dtype=tf.float32)
+        "softmax_w", [hidden_size, vocab_size], dtype=tf.float32)
 softmax_b = tf.get_variable("softmax_b", [vocab_size], dtype=tf.float32)
 logits = tf.matmul(output, softmax_w) + softmax_b
 
@@ -58,7 +67,7 @@ accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
 
 # Initialize the variables
-init = tf.initialize_all_variables()
+init = tf.global_variables_initializer()
 
 # Construct vocabulary index dictionary
 vocabulary = {}
