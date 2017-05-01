@@ -22,7 +22,6 @@ cell = lstm_cell
 
 initial_state = cell.zero_state(batch_size, tf.float32)
 embedding = tf.get_variable("embedding", [vocab_size, word_embedding_size])
-
 # input_data: [batch_size, num_steps]
 # targets： [batch_size, num_steps]
 input_data = tf.placeholder(tf.int32, [batch_size, num_steps])
