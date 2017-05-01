@@ -10,7 +10,7 @@ batch_size = 64
 vocab_size = 20000
 training_iters = 10000
 display_step = 1
-learning_rate = 1
+learning_rate = 0.1
 
 
 
@@ -151,12 +151,12 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 			# Calculate batch accuracy
 			#acc = sess.run(accuracy, feed_dict = {input_data: batch_x, targets: batch_y})
 			# Calculate batch loss
-			#mloss = sess.run(loss, feed_dict = {input_data: batch_x, targets: batch_y})
+			mloss = sess.run(loss, feed_dict = {input_data: batch_x, targets: batch_y})
 			acc = sess.run(accuracy,feed_dict =feed_dict)
 			print(
 				"Iter " + str(step * batch_size) + ", Minibatch Loss= " 
 			)
-			#print (mloss)
+			print (mloss)
 			print ("acc: " + str(acc))
 		
 		step += 1
