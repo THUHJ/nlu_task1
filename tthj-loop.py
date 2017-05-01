@@ -7,9 +7,9 @@ hidden_size = 512
 num_steps = 30
 keep_prob = 1
 batch_size = 64
-vocab_size = 200
+vocab_size = 20000
 training_iters = 10000
-display_step = 1
+display_step = 10
 learning_rate = 3e-3
 
 
@@ -82,7 +82,7 @@ while line:
 f.close()
 
 #f = open("../data/sentences.train", 'r')
-f = open("../data/test.train", 'r')
+f = open("../data/sentences.train", 'r')
 
 # Launch the graph
 print("Start Training!")
