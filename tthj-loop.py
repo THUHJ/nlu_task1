@@ -53,7 +53,7 @@ train_op = optimizer.apply_gradients(zip(gradients, variables))
 
 
 #correct_pred = tf.equal(logits, targets)
-accuracy = output.shape()
+accuracy = output.get_shape()
 
 
 # Initialize the variables
