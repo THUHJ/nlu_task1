@@ -7,7 +7,7 @@ num_steps = 30
 keep_prob = 1
 batch_size = 64
 vocab_size = 20
-training_iters = 100
+training_iters = 10000
 display_step = 1
 learning_rate = 3e-3
 
@@ -16,8 +16,8 @@ learning_rate = 3e-3
 lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(size, forget_bias=0.0,state_is_tuple=True)
 lstm_cell = tf.nn.rnn_cell.DropoutWrapper(
     lstm_cell, output_keep_prob=keep_prob)
-cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * num_steps, state_is_tuple=True)
-
+#cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * num_steps, state_is_tuple=True)
+cell = lstm_cell
 
 initial_state = cell.zero_state(batch_size, tf.float32)
 embedding = tf.get_variable("embedding", [vocab_size, size])
