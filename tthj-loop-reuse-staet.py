@@ -7,7 +7,7 @@ hidden_size = 512
 num_steps = 30
 keep_prob = 1
 batch_size = 64
-vocab_size = 2000
+vocab_size = 20
 training_iters = 10000
 display_step = 1
 learning_rate = 3e-3
@@ -35,14 +35,15 @@ b1 = tf.get_variable("b1", [hidden_size], dtype=tf.float32)
 
 outputs = []
 #state = cell.zero_state(batch_size, tf.float32)
-initial_state = tf.placeholder(tf.float32, [batch_size])
-state = cell.zero_state(batch_size, tf.float32)
+initial_state = cell.zero_state(batch_size, tf.float32)
+#state = cell.zero_state(batch_size, tf.float32)
+#state = tf.Variable(initial_state,trainable=False) 
+state = initial_state
 with tf.variable_scope("RNN"):
 	for time_step in range(num_steps-1):
 		if time_step > 0: tf.get_variable_scope().reuse_variables()
 		act_input = tf.matmul(inputs[:, time_step, :], w1) + b1
-		if time_step==0:
-			state = initial_state
+
 
 		(cell_output, state) = cell(act_input, state)
 		outputs.append(cell_output)
@@ -97,7 +98,8 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 	sess.run(init)
 	step = 1
 
-	last_state  = np.zeros(batch_size)
+	#last_state  = cell.zero_state(batch_size, tf.float32)
+	last_state =  tf.contrib.rnn.LSTMStateTuple(np.zeros([batch_size,hidden_size],dtype=float32),np.zeros([batch_size,hidden_size],dtype=float32))
 	# Keep training until reach max iterations
 	while step * batch_size < training_iters:
 
@@ -133,7 +135,7 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 		# print(batch_x)
 		# print(batch_y)
 		# print("Data Done!")
-		feed_dict =  {input_data: batch_x, targets: batch_y , initial_state : last_state}
+		feed_dict =  {input_data: batch_x, targets: batch_y,initial_state:last_state}
 		sess.run(train_op, feed_dict =feed_dict)
 
 
@@ -156,6 +158,8 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 		
 		step += 1
 		last_state = sess.run(state, feed_dict =feed_dict)
+		#print (last_state)
+		#print last_state.shpe()
 
 	print("Optimization Finished!")
 
