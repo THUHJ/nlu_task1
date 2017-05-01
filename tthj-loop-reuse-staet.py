@@ -99,7 +99,7 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 	step = 1
 
 	#last_state  = cell.zero_state(batch_size, tf.float32)
-	last_state =  tf.contrib.rnn.LSTMStateTuple(np.zeros([batch_size,hidden_size],dtype=float32),np.zeros([batch_size,hidden_size],dtype=float32))
+	last_state =  tf.contrib.rnn.LSTMStateTuple(np.zeros([batch_size,hidden_size]),np.zeros([batch_size,hidden_size]))
 	# Keep training until reach max iterations
 	while step * batch_size < training_iters:
 
