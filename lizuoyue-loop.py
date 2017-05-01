@@ -16,7 +16,7 @@ import random
 print("Import packages ... Done!")
 
 # Set learning parameters
-learning_rate  = 5e-4  # learning rate
+learning_rate  = 3e-3  # learning rate
 training_iters = 2e5   # training iters
 global_norm    = 10.0  # global norm
 disp_step      = 1     # display step
@@ -27,6 +27,7 @@ vocab_size     = 20000 # vocabulary size
 emb_size       = 100   # word embedding size
 seq_length     = 30    # sequence length
 state_size     = 512   # hidden state size
+keep_prob      = 1.0   # for dropout wrapper
 
 # Define RNN network input and output
 x = tf.placeholder(tf.int32, [None, seq_length])
@@ -50,6 +51,7 @@ print("Define network parameters ... Done!")
 input_emb   = tf.nn.embedding_lookup(emb_weight, x)
 input_seq   = tf.unstack(input_emb, axis = 1)
 lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, forget_bias = 0.0, reuse = True)
+lstm_cell   = tf.contrib.rnn.DropoutWrapper(lstm_cell, output_keep_prob = keep_prob)
 state       = lstm_cell.zero_state(batch_size, dtype = tf.float32)
 output_seq  = []
 for input_unit in input_seq:
@@ -109,14 +111,14 @@ with tf.Session() as sess:
 				line = f.readline()
 
 			words = line.strip().split(' ')
-			if (len(words) <= seq_length - 2):
+			if len(words) <= seq_length - 2:
 				code = [vocabulary["<bos>"]]
 				for word in words:
 					if word in vocabulary:
 						code.append(vocabulary[word])
 					else:
 						code.append(vocabulary["<unk>"])
-				while (len(code) <= seq_length - 2):
+				while len(code) <= seq_length - 2:
 					code.append(vocabulary["<pad>"])
 				code.append(vocabulary["<eos>"])
 				batch_x.append(code)
@@ -134,6 +136,8 @@ with tf.Session() as sess:
 		batch_y = batch_x[:, 1: seq_length]
 
 		sess.run(optimizer, feed_dict = {x: batch_x, y: batch_y})
+		print(sess.run(y_one_col, feed_dict = {x: batch_x, y: batch_y}))
+		print(sess.run(tf.argmax(pred_logits, 1), feed_dict = {x: batch_x, y: batch_y}))
 		if step % disp_step == 0:
 			# Calculate batch accuracy
 			acc = sess.run(accuracy, feed_dict = {x: batch_x, y: batch_y})
