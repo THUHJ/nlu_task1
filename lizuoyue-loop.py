@@ -41,15 +41,15 @@ out_bias   = tf.get_variable("out_bias"  , [vocab_size]            , dtype = tf.
 
 # Define LSTM cell weights and biases
 with tf.variable_scope("basic_lstm_cell"):
-	weights = tf.get_variable("weights", [emb_size + state_size, 4 * state_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
-	biases  = tf.get_variable("biases" , [4 * state_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+	weights = tf.get_variable("weights", [emb_size + state_size, 4 * state_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer()).reuse_variables()
+	biases  = tf.get_variable("biases" , [4 * state_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer()).reuse_variables()
 
 print("Define network parameters ... Done!")
 
 # Define RNN computation process
 input_emb   = tf.nn.embedding_lookup(emb_weight, x)
 input_seq   = tf.unstack(input_emb, axis = 1)
-lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, forget_bias = 0.0, reuse = True)
+lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, forget_bias = 0.0)#, reuse = True)
 state       = lstm_cell.zero_state(batch_size, dtype = tf.float32)
 output_seq  = []
 for input_unit in input_seq:
