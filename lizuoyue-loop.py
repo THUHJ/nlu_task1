@@ -49,13 +49,12 @@ print("Define network parameters ... Done!")
 # Define RNN computation process
 input_emb   = tf.nn.embedding_lookup(emb_weight, x)
 input_seq   = tf.unstack(input_emb, axis = 1)
-lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, forget_bias = 0.0)#, reuse = True)
+lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, forget_bias = 0.0, reuse = True)
 state       = lstm_cell.zero_state(batch_size, dtype = tf.float32)
 output_seq  = []
-with tf.variable_scope("basic_lstm_cell", reuse = True):
-	for input_unit in input_seq:
-		output_unit, state = lstm_cell(input_unit, state)
-		output_seq.append(output_unit)
+for input_unit in input_seq:
+	output_unit, state = lstm_cell(input_unit, state)
+	output_seq.append(output_unit)
 output_seq  = tf.transpose(output_seq[0: len(output_seq) - 1], [1, 0, 2])
 output_seq  = tf.reshape(output_seq, [-1, state_size])
 pred_logits = tf.matmul(output_seq, out_weight) + out_bias
