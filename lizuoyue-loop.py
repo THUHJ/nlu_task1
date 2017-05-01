@@ -1,71 +1,81 @@
-# ETH Zurich - Semester S17
-# Natural Language Understanding - Task 1 - Part 1
-# Team Member - Jie Huang, Yanping Xie, Zuoyue Li
+# ETH Zurich, Semester S17
+# Natural Language Understanding, Task 1
+# Team Members: Jie Huang, Yanping Xie, Zuoyue Li
 
-# Import packages
 from __future__ import print_function
-import tensorflow as tf
-from tensorflow.contrib import rnn
-
-import random
-import numpy as np
 
 # Deactivate the warnings
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
+# Import packages
+import tensorflow as tf
+import numpy as np
+import random
+
+print("Import packages ... Done!")
+
 # Set learning parameters
-learning_rate  = 3e-3  # 
-training_iters = 1e5   # 
-batch_size     = 512   # 
-display_step   = 1     # 
+learning_rate  = 1e-3  # learning rate
+training_iters = 2e5   # training iters
+global_norm    = 10.0  # global norm
+disp_step      = 1     # display step
 
 # Set network parameters
-n_vocab        = 1000  # vocabulary size
-n_steps        = 30    # sentence length
-n_hidden       = 256   # dimension of hidden layer cell
+batch_size     = 64    # batch size
+vocab_size     = 20000 # vocabulary size
+emb_size       = 100   # word embedding size
+seq_length     = 30    # sequence length
+state_size     = 512   # hidden state size
 
-# Create tf graph input
-x = tf.placeholder(tf.int32, [batch_size, n_steps])
-y = tf.placeholder(tf.float32, [batch_size, n_steps - 1, n_vocab])
+# Define RNN network input and output
+x = tf.placeholder(tf.int32, [None, seq_length])
+y = tf.placeholder(tf.int32, [None, seq_length - 1])
+y_one_col = tf.reshape(y, [-1])
+y_one_hot = tf.reshape(tf.one_hot(y, vocab_size), [-1, vocab_size])
 
-# Define output weight and bias
-output_weight = tf.Variable(tf.random_normal([n_vocab, n_hidden]))
-output_bias = tf.Variable(tf.random_normal([n_vocab, 1]))
+# Define word embeddings, output weight and output bias
+emb_weight = tf.get_variable("emb_weight", [vocab_size, emb_size  ], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+out_weight = tf.get_variable("out_weight", [state_size, vocab_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+out_bias   = tf.get_variable("out_bias"  , [vocab_size]            , dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 
 # Define LSTM cell weights and biases
 with tf.variable_scope("basic_lstm_cell"):
-	weights = tf.get_variable("weights", [n_vocab + n_hidden, 4 * n_hidden])
-	biases = tf.get_variable("biases", [4 * n_hidden])
+	weights = tf.get_variable("weights", [emb_size + state_size, 4 * state_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+	biases  = tf.get_variable("biases" , [4 * state_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 
-# Define RNN computation process 
-def RNN(x, output_weight, output_bias):
+print("Define network parameters ... Done!")
 
-	x_one_hot = tf.one_hot(x, n_vocab)
-	inputs = tf.unstack(x_one_hot, axis = 1)
+# Define RNN computation process
+input_emb   = tf.nn.embedding_lookup(emb_weight, x)
+input_seq   = tf.unstack(input_emb, axis = 1)
+lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, forget_bias = 0.0, reuse = True)
+state       = lstm_cell.zero_state(batch_size, dtype = tf.float32)
+output_seq  = []
+for input_unit in input_seq:
+	output_unit, state = lstm_cell(input_unit, state)
+	output_seq.append(output_unit)
+output_seq  = tf.transpose(output_seq[0: len(output_seq) - 1], [1, 0, 2])
+output_seq  = tf.reshape(output_seq, [-1, state_size])
+pred_logits = tf.matmul(output_seq, out_weight) + out_bias
 
-	cell = rnn.BasicLSTMCell(n_hidden, reuse = True)
-	outputs = []
-	state = cell.zero_state(batch_size, dtype = tf.float32)
-	for item in inputs:
-		output, state = cell(item, state)
-		outputs.append(output)
-	final_outputs = [tf.transpose(tf.matmul(output_weight, tf.reshape(tf.transpose(outputs[j][i, :]), shape = [n_hidden, 1])) + output_bias) for i in range(batch_size) for j in range(len(outputs) - 1)]
-	return tf.reshape(final_outputs, shape = [batch_size, n_steps - 1, n_vocab])
-
-pred = RNN(x, output_weight, output_bias)
-print("Network Defined!")
+print("Define network computation process ... Done!")
 
 # Define loss and optimizer
-cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits = pred, labels = y))
-optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate).minimize(cost)
+loss      = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits = pred_logits, labels = y_one_col))
+opt_func  = tf.train.AdamOptimizer(learning_rate = learning_rate)
+grad, var = zip(*opt_func.compute_gradients(loss))
+grad, _   = tf.clip_by_global_norm(grad, global_norm)
+optimizer = opt_func.apply_gradients(zip(grad, var))
 
 # Evaluate model
-correct_pred = tf.equal(tf.argmax(pred, 2), tf.argmax(y, 2))
-accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+true_pred = tf.equal(tf.argmax(pred_logits, 1), tf.to_int64(y_one_col))
+accuracy  = tf.reduce_mean(tf.cast(true_pred, tf.float32))
 
 # Initialize the variables
 init = tf.global_variables_initializer()
+
+print("Define loss, optimizer and evaluate function ... Done!")
 
 # Construct vocabulary index dictionary
 vocabulary = {}
@@ -78,10 +88,11 @@ while line:
 	line  = f.readline()
 f.close()
 
-f = open("../data/sentences.train", 'r')
+print("Load dictionary ... Done!")
 
 # Launch the graph
 print("Start Training!")
+f = open("../data/sentences.train", 'r')
 with tf.Session() as sess:
 	sess.run(init)
 	step = 1
@@ -90,6 +101,7 @@ with tf.Session() as sess:
 
 		batch_x = []
 		while len(batch_x) < batch_size:
+
 			line = f.readline()
 			if not line:
 				f.close()
@@ -97,43 +109,43 @@ with tf.Session() as sess:
 				line = f.readline()
 
 			words = line.strip().split(' ')
-			if (len(words) <= 28):
+			if (len(words) <= seq_length - 2):
 				code = [vocabulary["<bos>"]]
 				for word in words:
 					if word in vocabulary:
 						code.append(vocabulary[word])
 					else:
 						code.append(vocabulary["<unk>"])
-				while (len(code) < 29):
+				while (len(code) <= seq_length - 2):
 					code.append(vocabulary["<pad>"])
 				code.append(vocabulary["<eos>"])
 				batch_x.append(code)
 
+		# Random generation of input data
+		"""
+		batch_x = []
+		for k in range(batch_size):
+			code = [random.randint(0, vocab_size - 1)]
+			for i in range(seq_length - 1):
+				code.append((code[i] + 1) % vocab_size)
+			batch_x.append(code)
+		"""
 		batch_x = np.array(batch_x)
-		# batch_x = np.zeros((batch_size, n_steps), dtype = np.int32)
-		batch_y = np.zeros((batch_size, n_steps - 1, n_vocab))
-		for i in range(batch_size):
-			# batch_x[i, 0] = random.randint(0, n_vocab - 1)
-			for j in range(1, n_steps):
-				# batch_x[i, j] = (batch_x[i, j - 1] + 1) % n_vocab
-				batch_y[i, j - 1, batch_x[i, j]] = 1
-		# print(batch_x)
-		# print(batch_y)
-		# print("Data Done!")
+		batch_y = batch_x[:, 1: seq_length]
 
 		sess.run(optimizer, feed_dict = {x: batch_x, y: batch_y})
-		# print("Optimize Done!")
-		if step % display_step == 0:
+		if step % disp_step == 0:
 			# Calculate batch accuracy
 			acc = sess.run(accuracy, feed_dict = {x: batch_x, y: batch_y})
 			# Calculate batch loss
-			loss = sess.run(cost, feed_dict = {x: batch_x, y: batch_y})
+			cost = sess.run(loss, feed_dict = {x: batch_x, y: batch_y})
 			print(
-				"Iter " + str(step * batch_size) + ", Minibatch Loss = " + \
-				"{:.6f}".format(loss) + ", Training Accuracy = " + \
-				"{:.6f}".format(acc) \
+				"Iter " + str(step * batch_size) + ", Loss = " + \
+				"%6f" % cost + ", Accuracy = " + \
+				"%6f" % acc \
 			)
 		step += 1
+
 	print("Optimization Finished!")
 
 	save_path = saver.save(sess, "model.ckpt")
