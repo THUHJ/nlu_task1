@@ -6,7 +6,7 @@ size = 256
 num_steps = 30
 keep_prob = 1
 batch_size = 64
-vocab_size = 20
+vocab_size = 200
 training_iters = 10000
 display_step = 1
 learning_rate = 3e-3
@@ -40,10 +40,15 @@ softmax_w = tf.get_variable(
 softmax_b = tf.get_variable("softmax_b", [vocab_size], dtype=tf.float32)
 logits = tf.matmul(output, softmax_w) + softmax_b
 
-loss = tf.nn.seq2seq.sequence_loss_by_example(
-    [logits],
-    [tf.reshape(targets, [-1])],
-    [tf.ones([batch_size * (num_steps-1)])])
+#loss = tf.nn.seq2seq.sequence_loss_by_example(
+#    [logits],
+#    [tf.reshape(targets, [-1])],
+#    [tf.ones([batch_size * (num_steps-1)])])
+
+loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
+	labels=tf.reshape(targets, [-1],
+    logits=logits
+	)
 
 
 optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
