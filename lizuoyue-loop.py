@@ -40,9 +40,9 @@ out_weight = tf.get_variable("out_weight", [state_size, vocab_size], dtype = tf.
 out_bias   = tf.get_variable("out_bias"  , [vocab_size]            , dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 
 # Define LSTM cell weights and biases
-with tf.variable_scope("basic_lstm_cell"):
-	weights = tf.get_variable("weights", [emb_size + state_size, 4 * state_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer()).reuse_variables()
-	biases  = tf.get_variable("biases" , [4 * state_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer()).reuse_variables()
+with tf.variable_scope("basic_lstm_cell", reuse = True):
+	weights = tf.get_variable("weights", [emb_size + state_size, 4 * state_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+	biases  = tf.get_variable("biases" , [4 * state_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 
 print("Define network parameters ... Done!")
 
