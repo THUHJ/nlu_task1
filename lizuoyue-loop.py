@@ -23,7 +23,7 @@ disp_step      = 1     # display step
 
 # Set network parameters
 batch_size     = 64    # batch size
-vocab_size     = 1000  # vocabulary size
+vocab_size     = 20000 # vocabulary size
 emb_size       = 100   # word embedding size
 seq_length     = 30    # sequence length
 state_size     = 512   # hidden state size
