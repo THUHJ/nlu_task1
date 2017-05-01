@@ -3,10 +3,10 @@ import numpy as np
 
 
 size = 128
-num_steps = 30
+num_steps = 10
 keep_prob = 0.5
 batch_size = 64
-vocab_size = 200
+vocab_size = 20
 training_iters = 1000
 display_step = 1
 learning_rate = 1e-3
@@ -51,9 +51,8 @@ gradients, variables = zip(*optimizer.compute_gradients(loss))
 gradients, _ = tf.clip_by_global_norm(gradients, 10.0)
 train_op = optimizer.apply_gradients(zip(gradients, variables))
 
-
-#correct_pred = tf.equal(logits, targets)
-accuracy = output.get_shape()
+correct_pred = tf.equal(tf.argmax(logits, 2),targets) 
+accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
 
 # Initialize the variables
@@ -129,7 +128,7 @@ with tf.Session() as sess:
 				"Iter " + str(step * batch_size) + ", Minibatch Loss= " 
 			)
 			print (mloss)
-			print ("acc" + str(acc))
+			print ("acc: " + str(acc))
 		
 		step += 1
 	print("Optimization Finished!")
