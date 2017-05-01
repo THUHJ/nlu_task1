@@ -7,7 +7,6 @@ num_steps = 30
 keep_prob = 0.5
 batch_size = 64
 vocab_size = 200
-max_epoch = 4
 training_iters = 1000
 display_step = 1
 learning_rate = 1e-3
@@ -51,6 +50,11 @@ optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
 gradients, variables = zip(*optimizer.compute_gradients(loss))
 gradients, _ = tf.clip_by_global_norm(gradients, 10.0)
 train_op = optimizer.apply_gradients(zip(gradients, variables))
+
+
+correct_pred = tf.equal(logits, targets)
+accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+
 
 # Initialize the variables
 init = tf.initialize_all_variables()
@@ -120,10 +124,12 @@ with tf.Session() as sess:
 			#acc = sess.run(accuracy, feed_dict = {input_data: batch_x, targets: batch_y})
 			# Calculate batch loss
 			mloss = sess.run(loss, feed_dict = {input_data: batch_x, targets: batch_y})
+			acc = sess.run(accuracy,feed_dict = {input_data: batch_x, targets: batch_y})
 			print(
 				"Iter " + str(step * batch_size) + ", Minibatch Loss= " 
 			)
 			print (mloss)
+			print ("acc" + str(acc))
 		
 		step += 1
 	print("Optimization Finished!")
