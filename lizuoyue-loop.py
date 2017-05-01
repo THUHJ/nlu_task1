@@ -40,7 +40,7 @@ out_weight = tf.get_variable("out_weight", [state_size, vocab_size], dtype = tf.
 out_bias   = tf.get_variable("out_bias"  , [vocab_size]            , dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 
 # Define LSTM cell weights and biases
-with tf.variable_scope("basic_lstm_cell", reuse = True):
+with tf.variable_scope("basic_lstm_cell"):
 	weights = tf.get_variable("weights", [emb_size + state_size, 4 * state_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 	biases  = tf.get_variable("biases" , [4 * state_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 
@@ -52,9 +52,10 @@ input_seq   = tf.unstack(input_emb, axis = 1)
 lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, forget_bias = 0.0)#, reuse = True)
 state       = lstm_cell.zero_state(batch_size, dtype = tf.float32)
 output_seq  = []
-for input_unit in input_seq:
-	output_unit, state = lstm_cell(input_unit, state)
-	output_seq.append(output_unit)
+with tf.variable_scope("basic_lstm_cell", reuse = True):
+	for input_unit in input_seq:
+		output_unit, state = lstm_cell(input_unit, state)
+		output_seq.append(output_unit)
 output_seq  = tf.transpose(output_seq[0: len(output_seq) - 1], [1, 0, 2])
 output_seq  = tf.reshape(output_seq, [-1, state_size])
 pred_logits = tf.matmul(output_seq, out_weight) + out_bias
