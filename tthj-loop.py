@@ -45,11 +45,7 @@ logits = tf.matmul(output, softmax_w) + softmax_b
 #    [tf.reshape(targets, [-1])],
 #    [tf.ones([batch_size * (num_steps-1)])])
 
-loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
-	labels=tf.reshape(targets, [-1],
-    logits=logits
-	)
-
+loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.reshape(targets, [-1]), logits=logits)
 
 optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
 gradients, variables = zip(*optimizer.compute_gradients(loss))
