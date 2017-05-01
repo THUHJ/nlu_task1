@@ -7,9 +7,9 @@ hidden_size = 512
 num_steps = 30
 keep_prob = 1
 batch_size = 64
-vocab_size = 20000
+vocab_size = 200
 training_iters = 10000
-display_step = 10
+display_step = 1
 learning_rate = 3e-3
 
 
@@ -86,7 +86,9 @@ f = open("../data/sentences.train", 'r')
 
 # Launch the graph
 print("Start Training!")
-with tf.Session() as sess:
+NUM_THREADS = 4
+with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,intra_op_parallelism_threads=NUM_THREADS)) as sess:
+
 	sess.run(init)
 	step = 1
 	# Keep training until reach max iterations
