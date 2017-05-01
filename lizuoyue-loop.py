@@ -28,10 +28,11 @@ emb_size       = 100   # word embedding size
 seq_length     = 30    # sequence length
 state_size     = 512   # hidden state size
 keep_prob      = 1.0   # for dropout wrapper
+s_flag         = False # for saving states
 
 # Define RNN network input and output
-x = tf.placeholder(tf.int32, [None, seq_length])
-y = tf.placeholder(tf.int32, [None, seq_length - 1])
+x = tf.placeholder(tf.int32  , [None, seq_length    ])
+y = tf.placeholder(tf.int32  , [None, seq_length - 1])
 y_one_col = tf.reshape(y, [-1])
 y_one_hot = tf.reshape(tf.one_hot(y, vocab_size), [-1, vocab_size])
 
@@ -52,11 +53,19 @@ input_emb   = tf.nn.embedding_lookup(emb_weight, x)
 input_seq   = tf.unstack(input_emb, axis = 1)
 lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, forget_bias = 0.0, reuse = True)
 lstm_cell   = tf.contrib.rnn.DropoutWrapper(lstm_cell, output_keep_prob = keep_prob)
-state       = lstm_cell.zero_state(batch_size, dtype = tf.float32)
+state       = None
+if not s_flag:
+	state   = lstm_cell.zero_state(batch_size, tf.float32)
+	s_flag  = True
+	print("AAAAAAA")
+else:
+	state   = state_save
+	print("BBBBBBB")
 output_seq  = []
 for input_unit in input_seq:
 	output_unit, state = lstm_cell(input_unit, state)
 	output_seq.append(output_unit)
+state_save  = state
 output_seq  = tf.transpose(output_seq[0: len(output_seq) - 1], [1, 0, 2])
 output_seq  = tf.reshape(output_seq, [-1, state_size])
 pred_logits = tf.matmul(output_seq, out_weight) + out_bias
@@ -76,6 +85,7 @@ accuracy  = tf.reduce_mean(tf.cast(true_pred, tf.float32))
 
 # Initialize the variables
 init = tf.global_variables_initializer()
+init_state = np.zeros((2, batch_size, state_size))
 
 print("Define loss, optimizer and evaluate function ... Done!")
 
