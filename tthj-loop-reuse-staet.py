@@ -20,7 +20,7 @@ lstm_cell = tf.contrib.rnn.DropoutWrapper(
 #cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * num_steps, state_is_tuple=True)
 cell = lstm_cell
 
-initial_state = cell.zero_state(batch_size, tf.float32)
+
 embedding = tf.get_variable("embedding", [vocab_size, word_embedding_size], initializer = tf.contrib.layers.xavier_initializer())
 # input_data: [batch_size, num_steps]
 # targets： [batch_size, num_steps]
@@ -34,11 +34,16 @@ b1 = tf.get_variable("b1", [hidden_size], dtype=tf.float32)
 
 
 outputs = []
-state = initial_state
+#state = cell.zero_state(batch_size, tf.float32)
+initial_state = tf.placeholder(tf.float32, [batch_size])
+state = cell.zero_state(batch_size, tf.float32)
 with tf.variable_scope("RNN"):
 	for time_step in range(num_steps-1):
 		if time_step > 0: tf.get_variable_scope().reuse_variables()
 		act_input = tf.matmul(inputs[:, time_step, :], w1) + b1
+		if time_step==0:
+			state = initial_state
+
 		(cell_output, state) = cell(act_input, state)
 		outputs.append(cell_output)
 
@@ -91,6 +96,8 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 
 	sess.run(init)
 	step = 1
+
+	last_state  = np.zeros(batch_size)
 	# Keep training until reach max iterations
 	while step * batch_size < training_iters:
 
@@ -126,21 +133,21 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 		# print(batch_x)
 		# print(batch_y)
 		# print("Data Done!")
-
-		sess.run(train_op, feed_dict = {input_data: batch_x, targets: batch_y})
+		feed_dict =  {input_data: batch_x, targets: batch_y , initial_state : last_state}
+		sess.run(train_op, feed_dict =feed_dict)
 
 
 
 		# print("Optimize Done!")
 		
 		if step % display_step == 0:
-			print(sess.run(targets,feed_dict = {input_data: batch_x, targets: batch_y}))
-			print(sess.run(tf.argmax(pred, 2), feed_dict = {input_data: batch_x, targets: batch_y}))
+			print(sess.run(targets,feed_dict = feed_dict))
+			print(sess.run(tf.argmax(pred, 2), feed_dict = feed_dict))
 			# Calculate batch accuracy
 			#acc = sess.run(accuracy, feed_dict = {input_data: batch_x, targets: batch_y})
 			# Calculate batch loss
 			#mloss = sess.run(loss, feed_dict = {input_data: batch_x, targets: batch_y})
-			acc = sess.run(accuracy,feed_dict = {input_data: batch_x, targets: batch_y})
+			acc = sess.run(accuracy,feed_dict =feed_dict)
 			print(
 				"Iter " + str(step * batch_size) + ", Minibatch Loss= " 
 			)
@@ -148,6 +155,8 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 			print ("acc: " + str(acc))
 		
 		step += 1
+		last_state = sess.run(state, feed_dict =feed_dict)
+
 	print("Optimization Finished!")
 
 	# Calculate accuracy for test set
