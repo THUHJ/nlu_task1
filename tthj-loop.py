@@ -14,7 +14,7 @@ learning_rate = 1e-3
 
 
 
-lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(size, forget_bias=0.0)
+lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(size, forget_bias=0.0,state_is_tuple=True)
 lstm_cell = tf.nn.rnn_cell.DropoutWrapper(
     lstm_cell, output_keep_prob=keep_prob)
 cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * num_steps)
