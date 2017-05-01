@@ -10,7 +10,7 @@ batch_size = 64
 vocab_size = 20000
 training_iters = 10000
 display_step = 1
-learning_rate = 3e-3
+learning_rate = 1
 
 
 
