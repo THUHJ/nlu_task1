@@ -8,9 +8,9 @@ num_steps = 30
 keep_prob = 1
 batch_size = 64
 vocab_size = 2000
-training_iters = 10000
+training_iters = 1000
 display_step = 1
-learning_rate = 3e-3
+learning_rate = 0.01
 
 
 
@@ -28,9 +28,12 @@ input_data = tf.placeholder(tf.int32, [batch_size, num_steps])
 targets = tf.placeholder(tf.int32, [batch_size, num_steps-1])
 inputs = tf.nn.embedding_lookup(embedding, input_data)   #batch_size * num_steps * word_embedding_size
 
-w1 = tf.get_variable(
-        "w1", [word_embedding_size, hidden_size], dtype=tf.float32)
-b1 = tf.get_variable("b1", [hidden_size], dtype=tf.float32)
+#w1 = tf.get_variable(
+#        "w1", [word_embedding_size, hidden_size], dtype=tf.float32)
+#b1 = tf.get_variable("b1", [hidden_size], dtype=tf.float32)
+with tf.variable_scope("basic_lstm_cell"):
+	weights = tf.get_variable("weights", [word_embedding_size + hidden_size, 4 * hidden_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+	biases  = tf.get_variable("biases" , [4 * hidden_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 
 
 outputs = []
@@ -38,8 +41,9 @@ state = initial_state
 with tf.variable_scope("RNN"):
 	for time_step in range(num_steps-1):
 		if time_step > 0: tf.get_variable_scope().reuse_variables()
-		act_input = tf.matmul(inputs[:, time_step, :], w1) + b1
-		(cell_output, state) = cell(act_input, state)
+		#act_input = tf.matmul(inputs[:, time_step, :], w1) + b1
+		#(cell_output, state) = cell(act_input, state)
+		(cell_output, state) = cell(inputs[:, time_step, :], state)
 		outputs.append(cell_output)
 
 output = tf.reshape(tf.concat(outputs,1), [-1, hidden_size])
@@ -53,7 +57,7 @@ logits = tf.matmul(output, softmax_w) + softmax_b
 #    [tf.reshape(targets, [-1])],
 #    [tf.ones([batch_size * (num_steps-1)])])
 
-loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.reshape(targets, [-1]), logits=logits)
+loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.reshape(targets, [-1]), logits=logits))
 
 optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
 gradients, variables = zip(*optimizer.compute_gradients(loss))
@@ -149,6 +153,9 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 		
 		step += 1
 	print("Optimization Finished!")
+	saver = tf.train.Saver( )
+	fname = str(word_embedding_size)+'-'+str(hidden_size)+'-'+str(batch_size)+'-'+str(vocab_size)+'-'+str(learning_rate)+'-'+str(training_iters)
+	save_path = saver.save(sess, './model/lstm'+fname+'.ckpt')
 
 	# Calculate accuracy for test set
 	

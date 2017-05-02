@@ -1,0 +1,2 @@
+model_checkpoint_path: "lstm100-512-64-2000-0.01-1000.ckpt"
+all_model_checkpoint_paths: "lstm100-512-64-2000-0.01-1000.ckpt"
