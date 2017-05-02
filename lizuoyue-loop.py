@@ -166,5 +166,5 @@ with tf.Session() as sess:
 
 	print("Optimization Finished!")
 
-	save_path = saver.save(sess, "lizuoyue-loop/model.ckpt")
+	save_path = saver.save(sess, "../lizuoyue-loop/model.ckpt")
 	print("Model saved in file: %s" % save_path)
