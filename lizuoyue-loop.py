@@ -11,8 +11,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 # Import packages
 import tensorflow as tf
 import numpy as np
-import random
-np.set_printoptions(threshold = 30)
 
 print("Import packages ... Done!")
 
@@ -31,8 +29,8 @@ state_size     = 512   # hidden state size
 keep_prob      = 1.0   # for dropout wrapper
 
 # Define RNN network input and output
-x = tf.placeholder(tf.int32  , [None, seq_length    ])
-y = tf.placeholder(tf.int32  , [None, seq_length - 1])
+x = tf.placeholder(tf.int32, [None, seq_length    ])
+y = tf.placeholder(tf.int32, [None, seq_length - 1])
 y_one_col = tf.reshape(y, [-1])
 y_one_hot = tf.reshape(tf.one_hot(y, vocab_size), [-1, vocab_size])
 
