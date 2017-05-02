@@ -17,7 +17,7 @@ np.set_printoptions(threshold = 30)
 print("Import packages ... Done!")
 
 # Set learning parameters
-learning_rate  = 1e-1  # learning rate
+learning_rate  = 5e-2  # learning rate
 training_iters = 1e5   # training iters
 global_norm    = 10.0  # global norm
 disp_step      = 1     # display step
@@ -147,9 +147,6 @@ with tf.Session() as sess:
 
 		sess.run(optimizer, feed_dict = feed_dict)
 
-		print(np.array(sess.run(y_one_col, feed_dict = feed_dict)).reshape([-1, seq_length - 1]))
-		print(np.array(sess.run(tf.argmax(pred_logits, 1), feed_dict = feed_dict)).reshape([-1, seq_length - 1]))
-
 		if step % disp_step == 0:
 			# Calculate batch accuracy
 			acc = sess.run(accuracy, feed_dict = feed_dict)
@@ -160,6 +157,19 @@ with tf.Session() as sess:
 				"%6f" % cost + ", Accuracy = " + \
 				"%6f" % acc \
 			)
+
+		org = np.array(sess.run(y_one_col, feed_dict = feed_dict)).reshape([-1, seq_length - 1])
+		pred = np.array(sess.run(tf.argmax(pred_logits, 1), feed_dict = feed_dict)).reshape([-1, seq_length - 1])
+
+		for i in range(org.shape[0]):
+			a = ""
+			b = ""
+			for j in range(org.shape[1]):
+				a += (look_up[org[i, j]] + " ")
+				b += (look_up[pred[i, j]] + " ")
+			print(a)
+			print(b)
+
 		step += 1
 
 		# state_feed = sess.run(state, feed_dict = feed_dict)
