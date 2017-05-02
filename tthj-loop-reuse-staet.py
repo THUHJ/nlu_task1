@@ -1,13 +1,14 @@
 import tensorflow as tf
 import numpy as np
-
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 word_embedding_size = 100
 hidden_size = 512
 num_steps = 30
 keep_prob = 1
 batch_size = 64
-vocab_size = 200
+vocab_size = 20000
 training_iters = 1000
 display_step = 1
 learning_rate = 0.1
@@ -27,10 +28,11 @@ embedding = tf.get_variable("embedding", [vocab_size, word_embedding_size], init
 input_data = tf.placeholder(tf.int32, [batch_size, num_steps])
 targets = tf.placeholder(tf.int32, [batch_size, num_steps-1])
 inputs = tf.nn.embedding_lookup(embedding, input_data)   #batch_size * num_steps * word_embedding_size
-
-#w1 = tf.get_variable(
-#        "w1", [word_embedding_size, hidden_size], dtype=tf.float32)
-#b1 = tf.get_variable("b1", [hidden_size], dtype=tf.float32)
+'''
+w1 = tf.get_variable(
+        "w1", [word_embedding_size, hidden_size], dtype=tf.float32,initializer = tf.contrib.layers.xavier_initializer())
+b1 = tf.get_variable("b1", [hidden_size], dtype=tf.float32,initializer = tf.contrib.layers.xavier_initializer())
+'''
 with tf.variable_scope("basic_lstm_cell"):
 	weights = tf.get_variable("weights", [word_embedding_size + hidden_size, 4 * hidden_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 	biases  = tf.get_variable("biases" , [4 * hidden_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
@@ -46,8 +48,7 @@ with tf.variable_scope("RNN"):
 	for time_step in range(num_steps-1):
 		if time_step > 0: tf.get_variable_scope().reuse_variables()
 		#act_input = tf.matmul(inputs[:, time_step, :], w1) + b1
-
-
+		#(cell_output, state) = cell(act_input, state)
 		(cell_output, state) = cell(inputs[:, time_step, :], state)
 		outputs.append(cell_output)
 
@@ -57,12 +58,8 @@ softmax_w = tf.get_variable(
 softmax_b = tf.get_variable("softmax_b", [vocab_size], dtype=tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 logits = tf.matmul(output, softmax_w) + softmax_b
 
-#loss = tf.nn.seq2seq.sequence_loss_by_example(
-#    [logits],
-#    [tf.reshape(targets, [-1])],
-#    [tf.ones([batch_size * (num_steps-1)])])
+loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.reshape(targets, [-1]), logits=logits)）
 
-loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.reshape(targets, [-1]), logits=logits)
 
 optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
 gradients, variables = zip(*optimizer.compute_gradients(loss))
@@ -170,7 +167,7 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 	print("Optimization Finished!")
 	saver = tf.train.Saver( )
 	fname = str(word_embedding_size)+'-'+str(hidden_size)+'-'+str(batch_size)+'-'+str(vocab_size)+'-'+str(learning_rate)+'-'+str(training_iters)
-	save_path = saver.save(sess, './model/lstm'+fname+'.ckpt')
+	save_path = saver.save(sess, '../model/lstm'+fname+'.ckpt')
 
 	
 

@@ -1,29 +1,30 @@
 import tensorflow as tf
 import numpy as np
+import os
+import random
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 
 word_embedding_size = 100
 hidden_size = 512
-num_steps = 30
+num_steps = 10
 keep_prob = 1
 batch_size = 64
-vocab_size = 2000
-training_iters = 1000
-display_step = 1
+vocab_size = 200
+training_iters = 20000
+display_step = 10
 learning_rate = 0.01
 
 
 
-lstm_cell = tf.contrib.rnn.BasicLSTMCell(hidden_size, forget_bias=0.0,state_is_tuple=True)
-lstm_cell = tf.contrib.rnn.DropoutWrapper(
-    lstm_cell, output_keep_prob=keep_prob)
+#lstm_cell = tf.contrib.rnn.BasicLSTMCell(hidden_size, forget_bias=0.0, state_is_tuple=True)
+lstm_cell = tf.contrib.rnn.BasicLSTMCell(hidden_size)
+lstm_cell = tf.contrib.rnn.DropoutWrapper(lstm_cell, output_keep_prob=keep_prob)
 #cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * num_steps, state_is_tuple=True)
 cell = lstm_cell
 
-initial_state = cell.zero_state(batch_size, tf.float32)
+#initial_state = cell.zero_state(batch_size, tf.float32)
 embedding = tf.get_variable("embedding", [vocab_size, word_embedding_size], initializer = tf.contrib.layers.xavier_initializer())
-# input_data: [batch_size, num_steps]
-# targets： [batch_size, num_steps]
 input_data = tf.placeholder(tf.int32, [batch_size, num_steps])
 targets = tf.placeholder(tf.int32, [batch_size, num_steps-1])
 inputs = tf.nn.embedding_lookup(embedding, input_data)   #batch_size * num_steps * word_embedding_size
@@ -37,7 +38,7 @@ with tf.variable_scope("basic_lstm_cell"):
 
 
 outputs = []
-state = initial_state
+state = cell.zero_state(batch_size, tf.float32)
 with tf.variable_scope("RNN"):
 	for time_step in range(num_steps-1):
 		if time_step > 0: tf.get_variable_scope().reuse_variables()
@@ -52,21 +53,17 @@ softmax_w = tf.get_variable(
 softmax_b = tf.get_variable("softmax_b", [vocab_size], dtype=tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 logits = tf.matmul(output, softmax_w) + softmax_b
 
-#loss = tf.nn.seq2seq.sequence_loss_by_example(
-#    [logits],
-#    [tf.reshape(targets, [-1])],
-#    [tf.ones([batch_size * (num_steps-1)])])
-
 loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.reshape(targets, [-1]), logits=logits))
-
 optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
 gradients, variables = zip(*optimizer.compute_gradients(loss))
 gradients, _ = tf.clip_by_global_norm(gradients, 10.0)
 train_op = optimizer.apply_gradients(zip(gradients, variables))
 
+
 pred = tf.reshape(logits,[batch_size , (num_steps-1), vocab_size])
 correct_pred = tf.equal(tf.argmax(pred, 2),tf.to_int64(targets)) 
 accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+
 
 
 # Initialize the variables
@@ -86,7 +83,10 @@ while line:
 f.close()
 
 #f = open("../data/sentences.train", 'r')
-f = open("../data/sentences.train", 'r')
+input_file = "../data/sentences.train"
+#input_file = "../data/1.txt"
+
+f = open(input_file, 'r')
 
 # Launch the graph
 print("Start Training!")
@@ -101,9 +101,10 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 		batch_x = []
 		while len(batch_x) < batch_size:
 			line = f.readline()
-			if not line:
+			if not line or step % 100==0:
 				f.close()
-				f = open("../data/sentences.train", 'r')
+
+				f = open(input_file, 'r')
 				line = f.readline()
 
 			words = line.strip().split(' ')
@@ -120,16 +121,23 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 				batch_x.append(code)
 
 		batch_x = np.array(batch_x)
-		# batch_x = np.zeros((batch_size, n_steps), dtype = np.int32)
+
+
+		# Random generation of input data
+		'''
+		batch_x = []
+		for k in range(batch_size):
+			code = [random.randint(0, vocab_size - 1)]
+			for i in range(num_steps - 1):
+				code.append((code[i] + 1) % vocab_size)
+			batch_x.append(code)
+		batch_x = np.array(batch_x)
+		'''
 		batch_y = np.zeros((batch_size, num_steps - 1))
 		for i in range(batch_size):
-			# batch_x[i, 0] = random.randint(0, n_vocab - 1)
 			for j in range(1, num_steps):
-				# batch_x[i, j] = (batch_x[i, j - 1] + 1) % n_vocab
 				batch_y[i, j - 1] =  batch_x[i, j]
-		# print(batch_x)
-		# print(batch_y)
-		# print("Data Done!")
+	
 
 		sess.run(train_op, feed_dict = {input_data: batch_x, targets: batch_y})
 
@@ -139,16 +147,14 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 		
 		if step % display_step == 0:
 			print(sess.run(targets,feed_dict = {input_data: batch_x, targets: batch_y}))
-			print(sess.run(tf.argmax(pred, 2), feed_dict = {input_data: batch_x, targets: batch_y}))
-			# Calculate batch accuracy
-			#acc = sess.run(accuracy, feed_dict = {input_data: batch_x, targets: batch_y})
-			# Calculate batch loss
-			#mloss = sess.run(loss, feed_dict = {input_data: batch_x, targets: batch_y})
-			acc = sess.run(accuracy,feed_dict = {input_data: batch_x, targets: batch_y})
-			print(
-				"Iter " + str(step * batch_size) + ", Minibatch Loss= " 
-			)
-			#print (mloss)
+			tmp = sess.run(tf.argmax(pred, 2), feed_dict = {input_data: batch_x, targets: batch_y})
+			print(tmp[0:10][0:10])
+			mloss = sess.run(loss, feed_dict = {input_data: batch_x, targets: batch_y})
+			#acc = sess.run(,feed_dict = {input_data: batch_x, targets: batch_y})
+			[logit,acc] = sess.run([logits,accuracy],feed_dict = {input_data: batch_x, targets: batch_y})
+
+			print (logit[0:10][0:10])
+			print("Iter " + str(step * batch_size) + ", Minibatch Loss= " + str(mloss))
 			print ("acc: " + str(acc))
 		
 		step += 1

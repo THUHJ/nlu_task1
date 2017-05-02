@@ -100,6 +100,7 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 	step = 1
 	# Keep training until reach max iterations
 	f = open("../data/sentences.continuation", 'r')
+	line = f.readline()
 	while line:
 		words = line.strip().split(' ')
 		
@@ -129,6 +130,8 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 			feed_dict={input_one: my_next_word,state:last_state}
 			my_next_word = sess.run(next_word,feed_dict=feed_dict)
 			last_state = sess.run(state,feed_dict=feed_dict)
+			print (last_state.shape)
+
 			print (revovocabulary[my_next_word[0]],end=" ")
 			if (my_next_word==1):
 				break
