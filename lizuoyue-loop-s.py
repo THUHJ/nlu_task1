@@ -140,7 +140,7 @@ with tf.Session() as sess:
 		batch_x = np.array(batch_x)
 		batch_y = batch_x[:, 1: seq_length]
 
-		if step > 0: # == 1:
+		if step == 1:
 			feed_dict = {x: batch_x, y: batch_y}
 		else:
 			feed_dict = {x: batch_x, y: batch_y, state: state_feed}
@@ -162,9 +162,9 @@ with tf.Session() as sess:
 			)
 		step += 1
 
-		# state_feed = sess.run(state, feed_dict = feed_dict)
+		state_feed = sess.run(state, feed_dict = feed_dict)
 
 	print("Optimization Finished!")
 
-	save_path = saver.save(sess, "lizuoyue-loop/model.ckpt")
+	save_path = saver.save(sess, "lizuoyue-loop-s/model.ckpt")
 	print("Model saved in file: %s" % save_path)
