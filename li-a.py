@@ -16,7 +16,7 @@ import random
 print("Import packages ... Done!")
 
 # Set learning parameters
-learning_rate  = 2e-1  # learning rate
+learning_rate  = 1e-2  # learning rate
 training_iters = 1e5   # training iters
 global_norm    = 10.0  # global norm
 disp_step      = 1     # display step
@@ -26,10 +26,9 @@ batch_size     = 64    # batch size
 vocab_size     = 20000 # vocabulary size
 emb_size       = 100   # word embedding size
 seq_length     = 30    # sequence length
-state_size     = 1024  # hidden state size
+state_size     = 512   # hidden state size
 keep_prob      = 1.0   # for dropout wrapper
 forget_bias    = 1.0   # for cell
-proj_size      = 512
 
 # Define RNN network input and output
 x = tf.placeholder(tf.int32, [None, seq_length    ])
@@ -39,12 +38,11 @@ y_one_hot = tf.reshape(tf.one_hot(y, vocab_size), [-1, vocab_size])
 
 # Define word embeddings, output weight and output bias
 emb_weight = tf.get_variable("emb_weight", [vocab_size, emb_size  ], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
-proj_weight = tf.get_variable("proj_weight", [state_size, proj_size  ], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
-out_weight = tf.get_variable("out_weight", [proj_size, vocab_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+out_weight = tf.get_variable("out_weight", [state_size, vocab_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 out_bias   = tf.get_variable("out_bias"  , [vocab_size]            , dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 
 # Define LSTM cell weights and biases
-with tf.variable_scope("basic_rnn_cell"):
+with tf.variable_scope("basic_lstm_cell"):
 	weights = tf.get_variable("weights", [emb_size + state_size, 4 * state_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 	biases  = tf.get_variable("biases" , [4 * state_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 
@@ -54,7 +52,7 @@ print("Define network parameters ... Done!")
 input_emb   = tf.nn.embedding_lookup(emb_weight, x)
 input_seq   = tf.unstack(input_emb, axis = 1)
 lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, reuse = True, forget_bias = forget_bias)
-# lstm_cell   = tf.contrib.rnn.DropoutWrapper(lstm_cell, output_keep_prob = keep_prob)
+lstm_cell   = tf.contrib.rnn.DropoutWrapper(lstm_cell, output_keep_prob = keep_prob)
 state       = lstm_cell.zero_state(batch_size, tf.float32)
 output_seq  = []
 for input_unit in input_seq:
@@ -63,7 +61,7 @@ for input_unit in input_seq:
 last_state  = state
 output_seq  = tf.transpose(output_seq[0: len(output_seq) - 1], [1, 0, 2])
 output_seq  = tf.reshape(output_seq, [-1, state_size])
-pred_logits = tf.matmul(tf.matmul(output_seq, proj_weight), out_weight) + out_bias
+pred_logits = tf.matmul(output_seq, out_weight) + out_bias
 
 print("Define network computation process ... Done!")
 
@@ -107,7 +105,7 @@ with tf.Session() as sess:
 	step = 1
 	# Keep training until reach max iterations
 	while step * batch_size < training_iters:
-
+		"""
 		batch_x = []
 		while len(batch_x) < batch_size:
 
@@ -129,16 +127,16 @@ with tf.Session() as sess:
 					code.append(vocabulary["<pad>"])
 				code.append(vocabulary["<eos>"])
 				batch_x.append(code)
-
-		# Random generation of input data
 		"""
+		# Random generation of input data
+		# """
 		batch_x = []
 		for k in range(batch_size):
 			code = [random.randint(0, vocab_size - 1)]
 			for i in range(seq_length - 1):
 				code.append((code[i] + 1) % vocab_size)
 			batch_x.append(code)
-		"""
+		# """
 		batch_x = np.array(batch_x)
 		batch_y = batch_x[:, 1: seq_length]
 

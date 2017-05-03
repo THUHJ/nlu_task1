@@ -26,9 +26,10 @@ batch_size     = 64    # batch size
 vocab_size     = 20000 # vocabulary size
 emb_size       = 100   # word embedding size
 seq_length     = 30    # sequence length
-state_size     = 512   # hidden state size
+state_size     = 1024  # hidden state size
 keep_prob      = 1.0   # for dropout wrapper
 forget_bias    = 1.0   # for cell
+proj_size      = 512
 
 # Define RNN network input and output
 x = tf.placeholder(tf.int32, [None, seq_length    ])
@@ -38,20 +39,21 @@ y_one_hot = tf.reshape(tf.one_hot(y, vocab_size), [-1, vocab_size])
 
 # Define word embeddings, output weight and output bias
 emb_weight = tf.get_variable("emb_weight", [vocab_size, emb_size  ], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
-out_weight = tf.get_variable("out_weight", [state_size, vocab_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+proj_weight = tf.get_variable("proj_weight", [state_size, proj_size  ], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+out_weight = tf.get_variable("out_weight", [proj_size, vocab_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 out_bias   = tf.get_variable("out_bias"  , [vocab_size]            , dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 
 # Define LSTM cell weights and biases
-with tf.variable_scope("basic_rnn_cell"):
-	weights = tf.get_variable("weights", [emb_size + state_size, 1 * state_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
-	biases  = tf.get_variable("biases" , [1 * state_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+with tf.variable_scope("basic_lstm_cell"):
+	weights = tf.get_variable("weights", [emb_size + state_size, 4 * state_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+	biases  = tf.get_variable("biases" , [4 * state_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 
 print("Define network parameters ... Done!")
 
 # Define RNN computation process
 input_emb   = tf.nn.embedding_lookup(emb_weight, x)
 input_seq   = tf.unstack(input_emb, axis = 1)
-lstm_cell   = tf.contrib.rnn.BasicRNNCell(state_size, reuse = True)#, forget_bias = forget_bias)
+lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, reuse = True, forget_bias = forget_bias)
 # lstm_cell   = tf.contrib.rnn.DropoutWrapper(lstm_cell, output_keep_prob = keep_prob)
 state       = lstm_cell.zero_state(batch_size, tf.float32)
 output_seq  = []
@@ -61,7 +63,7 @@ for input_unit in input_seq:
 last_state  = state
 output_seq  = tf.transpose(output_seq[0: len(output_seq) - 1], [1, 0, 2])
 output_seq  = tf.reshape(output_seq, [-1, state_size])
-pred_logits = tf.matmul(output_seq, out_weight) + out_bias
+pred_logits = tf.matmul(tf.matmul(output_seq, proj_weight), out_weight) + out_bias
 
 print("Define network computation process ... Done!")
 
@@ -157,7 +159,7 @@ with tf.Session() as sess:
 				"%6f" % cost + ", Accuracy = " + \
 				"%6f" % acc \
 			)
-		"""
+		# """
 		org = np.array(sess.run(y_one_col, feed_dict = feed_dict)).reshape([-1, seq_length - 1])
 		pred = np.array(sess.run(tf.argmax(pred_logits, 1), feed_dict = feed_dict)).reshape([-1, seq_length - 1])
 
@@ -170,7 +172,7 @@ with tf.Session() as sess:
 				b += (look_up[pred[i, j]] + " ")
 			print(a)
 			print(b)
-		"""
+		# """
 		step += 1
 
 		# state_feed = sess.run(state, feed_dict = feed_dict)

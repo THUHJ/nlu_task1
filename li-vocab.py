@@ -1,11 +1,13 @@
 f = open("../data/sentences.train", 'r')
 vocabulary = {}
 
+count = 0
 line = f.readline()
 while line:
 
 	words = line.strip().split(' ')
 	if len(words) <= 28:
+		count += 1
 		for word in words:
 			if word not in vocabulary:
 				vocabulary[word] = 0;
@@ -14,6 +16,8 @@ while line:
 	line = f.readline()
 
 f.close()
+
+print(count)
 
 vocabulary["<bos>"] = 9999999
 vocabulary["<eos>"] = 9999998
