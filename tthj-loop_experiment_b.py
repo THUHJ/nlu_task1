@@ -2,7 +2,8 @@ import tensorflow as tf
 import numpy as np
 import os
 import random
-from load_embeddings import load_embedding
+from gensim import models 
+#from load_embeddings import load_embedding
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 
@@ -12,10 +13,38 @@ num_steps = 30
 keep_prob = 1
 batch_size = 64
 vocab_size = 200
-training_iters = 200000
+training_iters = 20000
 display_step = 1
 learning_rate = 0.01
 num_layers = 2
+
+def load_embedding(session, vocab, emb, path, dim_embedding):
+    '''
+      session        Tensorflow session object
+      vocab          A dictionary mapping token strings to vocabulary IDs
+      emb            Embedding tensor of shape vocabulary_size x dim_embedding
+      path           Path to embedding file
+      dim_embedding  Dimensionality of the external embedding.
+    '''
+    print("Loading external embeddings from %s" % path)
+    model = models.KeyedVectors.load_word2vec_format(path, binary=False)
+    external_embedding = np.zeros(shape=(vocab_size, dim_embedding))
+    matches = 0
+    for tok, idx in vocab.items():
+        if tok in model.vocab:
+            external_embedding[idx] = model[tok]
+            matches += 1
+        else:
+            print("%s not in embedding file" % tok)
+            external_embedding[idx] = np.random.uniform(low=-0.25, high=0.25, size=dim_embedding)
+    print (len(external_embedding))
+    print("%d words out of %d could be loaded" % (matches, vocab_size))
+    return external_embedding
+    #pretrained_embeddings = tf.placeholder(tf.float32, [vocab_size, word_embedding_size]) 
+    #assign_op = tf.assign(emb,pretrained_embeddings)
+    #session.run(assign_op, {pretrained_embeddings: external_embedding})
+
+
 
 
 
@@ -30,7 +59,8 @@ lstm_cell = tf.contrib.rnn.DropoutWrapper(lstm_cell, output_keep_prob=keep_prob)
 cell = lstm_cell
 
 #initial_state = cell.zero_state(batch_size, tf.float32)
-embedding = tf.get_variable("embedding", [vocab_size, word_embedding_size], initializer = tf.contrib.layers.xavier_initializer())
+embedding = tf.placeholder(tf.float32, [vocab_size, word_embedding_size])
+#tf.get_variable("embedding", [vocab_size, word_embedding_size], initializer = tf.contrib.layers.xavier_initializer())
 input_data = tf.placeholder(tf.int32, [batch_size, num_steps])
 targets = tf.placeholder(tf.int32, [batch_size, num_steps-1])
 inputs = tf.nn.embedding_lookup(embedding, input_data)   #batch_size * num_steps * word_embedding_size
@@ -40,7 +70,7 @@ inputs = tf.nn.embedding_lookup(embedding, input_data)   #batch_size * num_steps
 #b1 = tf.get_variable("b1", [hidden_size], dtype=tf.float32)
 
 with tf.variable_scope("basic_lstm_cell"):
-	weights = tf.get_variable("weights", [word_embedding_size + hidden_size, 4 * hidden_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+	weights = tf.get_variable("weights", [ word_embedding_size + hidden_size, 4 * hidden_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 	biases  = tf.get_variable("biases" , [4 * hidden_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 
 
@@ -88,6 +118,23 @@ while line:
 		break
 	line  = f.readline()
 f.close()
+NUM_THREADS = 4
+
+#emb = tf.Variable(initial_value=tf.zeros([vocab_size, word_embedding_size]), name='emb',dtype=tf.float32)
+#emb = tf.Session().run(emb)
+
+emb = load_embedding(session=tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,intra_op_parallelism_threads=NUM_THREADS)),
+	vocab=vocabulary,
+	emb = "",
+	path = "../data/wordembeddings-dim100.word2vec",
+	dim_embedding = word_embedding_size)
+
+print ("load embedding success")
+#print (emb.shape)
+#for i in range(200):
+#	for j in range(100):
+#		print (emb[i][j])
+#test = np.zeros([200,100])
 
 #f = open("../data/sentences.train", 'r')
 input_file = "../data/sentences.train"
@@ -97,7 +144,7 @@ f = open(input_file, 'r')
 #out = open("log.txt",'w')
 # Launch the graph
 print("Start Training!")
-NUM_THREADS = 4
+
 with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,intra_op_parallelism_threads=NUM_THREADS)) as sess:
 
 	sess.run(init)
@@ -145,20 +192,20 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 			for j in range(1, num_steps):
 				batch_y[i, j - 1] =  batch_x[i, j]
 	
-
-		sess.run(train_op, feed_dict = {input_data: batch_x, targets: batch_y})
+		feed_dict = {input_data: batch_x, targets: batch_y, embedding : emb}
+		sess.run(train_op, feed_dict = feed_dict)
 
 
 
 		# print("Optimize Done!")
 		
 		if step % display_step == 0:
-			print(sess.run(targets,feed_dict = {input_data: batch_x, targets: batch_y}))
-			tmp = sess.run(tf.argmax(pred, 2), feed_dict = {input_data: batch_x, targets: batch_y})
+			print(sess.run(targets,feed_dict = feed_dict))
+			tmp = sess.run(tf.argmax(pred, 2), feed_dict = feed_dict)
 			print(tmp[0:10][0:10])
-			mloss = sess.run(loss, feed_dict = {input_data: batch_x, targets: batch_y})
+			mloss = sess.run(loss, feed_dict = feed_dict)
 			#acc = sess.run(,feed_dict = {input_data: batch_x, targets: batch_y})
-			[logit,acc] = sess.run([logits,accuracy],feed_dict = {input_data: batch_x, targets: batch_y})
+			[logit,acc] = sess.run([logits,accuracy],feed_dict =feed_dict)
 
 			print (logit[0:10][0:10])
 			#out.write(str(logit[0:10][0:10]))
