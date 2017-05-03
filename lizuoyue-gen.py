@@ -22,7 +22,8 @@ vocab_size     = 20000 # vocabulary size
 emb_size       = 100   # word embedding size
 seq_length     = 20    # sequence length
 state_size     = 512   # hidden state size
-keep_prob      = 1.0   # for dropout wrapper
+keep_prob      = 0.4   # for dropout wrapper
+forget_bias    = 0.7
 
 # Define RNN network input and output
 x = tf.placeholder(tf.int32, [batch_size])
@@ -41,7 +42,7 @@ print("Define network parameters ... Done!")
 
 # Define RNN computation process
 input_emb   = tf.nn.embedding_lookup(emb_weight, x)
-lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, forget_bias = 0.0, reuse = True)
+lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, forget_bias = forget_bias, reuse = True)
 lstm_cell   = tf.contrib.rnn.DropoutWrapper(lstm_cell, output_keep_prob = keep_prob)
 state       = lstm_cell.zero_state(batch_size, tf.float32)
 output, state = lstm_cell(input_emb, state)
@@ -103,7 +104,7 @@ with tf.Session() as sess:
 			state_feed = sess.run(state, feed_dict = feed_dict)
 			next_words += look_up[next_idx[0]]
 			next_words += " "
-		print(line.strip() + " *** " + next_words)
+		print(line.strip() + " || " + next_words)
 		line = f.readline()
 
 	f.close()
