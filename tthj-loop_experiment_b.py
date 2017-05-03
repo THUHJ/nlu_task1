@@ -12,8 +12,8 @@ hidden_size = 512
 num_steps = 30
 keep_prob = 1
 batch_size = 64
-vocab_size = 200
-training_iters = 20000
+vocab_size = 20000
+training_iters = 100000
 display_step = 1
 learning_rate = 0.01
 num_layers = 2
@@ -141,7 +141,7 @@ input_file = "../data/sentences.train"
 #input_file = "../data/1.txt"
 
 f = open(input_file, 'r')
-#out = open("log.txt",'w')
+out = open("log.txt",'w')
 # Launch the graph
 print("Start Training!")
 
@@ -178,7 +178,7 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 
 
 		# Random generation of input data
-		
+		'''
 		batch_x = []
 		for k in range(batch_size):
 			code = [random.randint(0, vocab_size - 1)]
@@ -186,7 +186,7 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 				code.append((code[i] + 1) % vocab_size)
 			batch_x.append(code)
 		batch_x = np.array(batch_x)
-		
+		'''
 		batch_y = np.zeros((batch_size, num_steps - 1))
 		for i in range(batch_size):
 			for j in range(1, num_steps):
@@ -203,13 +203,16 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 			print(sess.run(targets,feed_dict = feed_dict))
 			tmp = sess.run(tf.argmax(pred, 2), feed_dict = feed_dict)
 			print(tmp[0:10][0:10])
+			out.write(str(tmp[0:10][0:10])+"\n")
 			mloss = sess.run(loss, feed_dict = feed_dict)
 			#acc = sess.run(,feed_dict = {input_data: batch_x, targets: batch_y})
 			[logit,acc] = sess.run([logits,accuracy],feed_dict =feed_dict)
 
 			print (logit[0:10][0:10])
-			#out.write(str(logit[0:10][0:10]))
+			out.write(str(logit[0:10][0:10])+"\n")
 			print("Iter " + str(step * batch_size) + ", Minibatch Loss= " + str(mloss))
+			out.write(str(acc)+"\n")
+			out.flush();
 			print ("acc: " + str(acc))
 		
 		step += 1
@@ -220,7 +223,7 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 
 	# Calculate accuracy for test set
 	
-#out.close()
+out.close()
 
 
 
