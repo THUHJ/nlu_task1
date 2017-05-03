@@ -2,7 +2,9 @@ import tensorflow as tf
 import numpy as np
 import os
 import random
-from gensim import models 
+import sys
+sys.path.append('../')
+from aa.gensim import models
 #from load_embeddings import load_embedding
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
