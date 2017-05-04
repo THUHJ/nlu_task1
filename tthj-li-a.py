@@ -16,9 +16,9 @@ print("Import packages ... Done!")
 
 # Set learning parameters
 learning_rate  = 5e-2  # learning rate
-training_iters = 2e4   # training iters
+training_iters = 1e4   # training iters
 global_norm    = 10.0  # global norm
-disp_step      = 5     # display step
+disp_step      = 1     # display step
 
 # Set network parameters
 batch_size     = 64    # batch size
@@ -63,28 +63,17 @@ print("Define network parameters ... Done!")
 # Define RNN computation process
 input_emb   = tf.nn.embedding_lookup(emb_weight, x)
 input_seq   = tf.unstack(input_emb, axis = 1)
-lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, forget_bias = 0.0)
+lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, forget_bias = 0.0, reuse = True)
 init_state  = lstm_cell.zero_state(batch_size, tf.float32)
-
+state       = init_state
 output_seq  = []
-time_step=0
-with tf.variable_scope("rnn"):
-	state       = init_state
-	for input_unit in input_seq:
-		if time_step > 0: tf.get_variable_scope().reuse_variables()
-		time_step=1
-		output_unit, state = lstm_cell(input_unit, state)
-		output_seq.append(output_unit)
-	output_seq.pop()
+for input_unit in input_seq:
+	output_unit, state = lstm_cell(input_unit, state)
+	output_seq.append(output_unit)
+output_seq.pop()
 final_state = state
-# 29 * 64 * 512
-#print (tf.concat(output_seq,1).shape)
-
-output_seq  = tf.reshape(tf.concat(output_seq,1), [-1, state_size])
-
+output_seq  = tf.reshape(output_seq, [-1, state_size])
 pred_logits = tf.matmul(output_seq, out_weight) + out_bias
-print (pred_logits.shape)
-print (y.shape)
 
 print("Define network computation process ... Done!")
 
@@ -129,9 +118,10 @@ with tf.Session() as sess:
 						code.append(vocabulary[word])
 					else:
 						code.append(vocabulary["<unk>"])
+				
+				code.append(vocabulary["<eos>"])
 				while len(code) <= seq_length - 2:
 					code.append(vocabulary["<pad>"])
-				code.append(vocabulary["<eos>"])
 				batch_x.append(code)
 
 		# Random generation of input data
@@ -147,7 +137,7 @@ with tf.Session() as sess:
 
 		batch_x = np.array(batch_x)
 		batch_m = batch_x[:, 1: seq_length].transpose()
-		batch_y = batch_x[:,1:].reshape([-1])
+		batch_y = batch_m.reshape([-1])
 
 		if step == 1:
 			feed_dict = {x: batch_x, y: batch_y}
@@ -187,7 +177,6 @@ with tf.Session() as sess:
 					b += (look_up[pred[i, j]] + " ")
 				print("# " + a + "\n")
 				print("@ " + b + "\n")
-				break
 			# """
 
 		state_feed = sess.run(final_state, feed_dict = feed_dict)
