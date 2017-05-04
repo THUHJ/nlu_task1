@@ -23,6 +23,10 @@ cell = tf.contrib.rnn.BasicLSTMCell(hidden_size,state_is_tuple=True)
 
 
 embedding = tf.get_variable("embedding", [vocab_size, word_embedding_size], initializer = tf.contrib.layers.xavier_initializer())
+softmax_w = tf.get_variable(
+        "softmax_w", [hidden_size, vocab_size], dtype=tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+softmax_b = tf.get_variable("softmax_b", [vocab_size], dtype=tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+
 # input_data: [batch_size, num_steps]
 # targets： [batch_size, num_steps]
 input_data = tf.placeholder(tf.int32, [batch_size, num_steps])
@@ -56,9 +60,6 @@ with tf.variable_scope("rnn"):
 last_state_ = state
 
 output = tf.reshape(outputs, [-1, hidden_size])
-softmax_w = tf.get_variable(
-        "softmax_w", [hidden_size, vocab_size], dtype=tf.float32, initializer = tf.contrib.layers.xavier_initializer())
-softmax_b = tf.get_variable("softmax_b", [vocab_size], dtype=tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 
 logits = tf.matmul(output, softmax_w) + softmax_b
 
@@ -167,7 +168,7 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 			print ("acc: " + str(acc))
 		
 		step += 1
-		last_state = sess.run(last_state_, feed_dict =feed_dict)
+		#last_state = sess.run(last_state_, feed_dict =feed_dict)
 		#print (last_state)
 		#print (last_state[0].shape())
 		#print last_state.shpe()

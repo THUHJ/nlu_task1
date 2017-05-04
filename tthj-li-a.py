@@ -143,12 +143,13 @@ with tf.Session() as sess:
 		batch_x = np.array(batch_x)
 		batch_m = batch_x[:, 1: seq_length].transpose()
 		batch_y = batch_m.reshape([-1])
-
+		feed_dict = {x: batch_x, y: batch_y}
+		'''
 		if step == 1:
 			feed_dict = {x: batch_x, y: batch_y}
 		else:
 			feed_dict = {x: batch_x, y: batch_y, init_state: state_feed}
-
+		'''
 		sess.run(optimizer, feed_dict = feed_dict)
 
 		# Evaluate model
