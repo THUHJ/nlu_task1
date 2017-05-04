@@ -56,9 +56,9 @@ output_seq  = []
 time_step=0
 with tf.variable_scope("rnn"):
 	for input_unit in input_seq:
-		output_unit, state = lstm_cell(input_unit, state)
 		if time_step > 0: tf.get_variable_scope().reuse_variables()
 		time_step+=1
+		output_unit, state = lstm_cell(input_unit, state)
 		output_seq.append(output_unit)
 last_state  = state
 output_seq  = tf.transpose(output_seq[0: len(output_seq) - 1], [1, 0, 2])
