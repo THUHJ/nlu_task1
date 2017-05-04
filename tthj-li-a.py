@@ -125,7 +125,7 @@ with tf.Session() as sess:
 						code.append(vocabulary["<unk>"])
 				
 				code.append(vocabulary["<eos>"])
-				while len(code) <= seq_length - 2:
+				while len(code) <= seq_length - 1:
 					code.append(vocabulary["<pad>"])
 				batch_x.append(code)
 
