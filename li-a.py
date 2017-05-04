@@ -72,7 +72,6 @@ for input_unit in input_seq:
 	output_seq.append(output_unit)
 output_seq.pop()
 final_state = state
-print (output_seq.shape)
 output_seq  = tf.reshape(output_seq, [-1, state_size])
 pred_logits = tf.matmul(output_seq, out_weight) + out_bias
 
