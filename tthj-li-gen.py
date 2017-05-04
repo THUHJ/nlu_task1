@@ -44,9 +44,9 @@ print("Define network parameters ... Done!")
 input_emb   = tf.nn.embedding_lookup(emb_weight, x)
 lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, forget_bias = forget_bias, reuse = True)
 lstm_cell   = tf.contrib.rnn.DropoutWrapper(lstm_cell, output_keep_prob = keep_prob)
-#init_state       = lstm_cell.zero_state(batch_size, tf.float32)
-#state       = init_state
-state = lstm_cell.zero_state(batch_size, tf.float32)
+init_state       = lstm_cell.zero_state(batch_size, tf.float32)
+state       = init_state
+#state = lstm_cell.zero_state(batch_size, tf.float32)
 
 output, state = lstm_cell(input_emb, state)
 
@@ -75,7 +75,7 @@ print("Start generation!")
 saver = tf.train.Saver()
 with tf.Session() as sess:
 
-	saver.restore(sess, '../model/model0.1 100000-1-0.0.ckpt')
+	saver.restore(sess, '../model2/reuse-s-model.ckpt')
 
 	f = open("../data/sentences.continuation", 'r')
 	line = f.readline()
@@ -95,7 +95,7 @@ with tf.Session() as sess:
 			if step == 1:
 				feed_dict = {x: np.array([idx])}
 			else:
-				feed_dict = {x: np.array([idx]), state: state_feed}
+				feed_dict = {x: np.array([idx]), init_state: state_feed}
 			#print (idx)
 			[next_idx,pred] = sess.run([next_word,pred_logits], feed_dict = feed_dict)
 			#print (pred)
@@ -106,7 +106,7 @@ with tf.Session() as sess:
 
 		next_words = ""
 		for i in range(len(code), seq_length):
-			feed_dict = {x: next_idx, state: state_feed}
+			feed_dict = {x: next_idx, init_state: state_feed}
 			next_idx = sess.run(next_word, feed_dict = feed_dict)
 			state_feed = sess.run(state, feed_dict = feed_dict)
 			next_words += look_up[next_idx[0]]

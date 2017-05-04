@@ -16,9 +16,9 @@ print("Import packages ... Done!")
 
 # Set learning parameters
 learning_rate  = 1e-1  # learning rate
-training_iters = 1e4   # training iters
+training_iters = 1e5   # training iters
 global_norm    = 1.0   # global norm
-disp_step      = 10     # display step
+disp_step      = 5     # display step
 
 # Set network parameters
 batch_size     = 64    # batch size
@@ -51,8 +51,7 @@ input_emb   = tf.nn.embedding_lookup(emb_weight, x)
 input_seq   = tf.unstack(input_emb, axis = 1)
 lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, forget_bias = 0.0, reuse = True)
 lstm_cell   = tf.contrib.rnn.DropoutWrapper(lstm_cell, output_keep_prob = keep_prob)
-init_state  = lstm_cell.zero_state(batch_size, tf.float32)
-state       = init_state
+state       = lstm_cell.zero_state(batch_size, tf.float32)
 output_seq  = []
 for input_unit in input_seq:
 	output_unit, state = lstm_cell(input_unit, state)
@@ -142,7 +141,7 @@ with tf.Session() as sess:
 		if step == 1:
 			feed_dict = {x: batch_x, y: batch_y}
 		else:
-			feed_dict = {x: batch_x, y: batch_y, init_state: state_feed}
+			feed_dict = {x: batch_x, y: batch_y, state: state_feed}
 
 		sess.run(optimizer, feed_dict = feed_dict)
 
@@ -172,9 +171,9 @@ with tf.Session() as sess:
 
 		step += 1
 
-		state_feed = sess.run(state, feed_dict = feed_dict)
+		state_feed = sess.run(last_state, feed_dict = feed_dict)
 
 	print("Optimization Finished!")
 
-	save_path = saver.save(sess, "../model/reuse-s-model.ckpt")
+	save_path = saver.save(sess, "../lizuoyue-loop-s/model.ckpt")
 	print("Model saved in file: %s" % save_path)

@@ -9,13 +9,13 @@ num_steps = 30
 keep_prob = 1
 batch_size = 64
 vocab_size = 20000
-training_iters = 1000
-display_step = 1
+training_iters = 5000
+display_step = 5
 learning_rate = 0.1
 
 
 
-cell = tf.contrib.rnn.BasicLSTMCell(hidden_size, forget_bias=0.0,state_is_tuple=True)
+cell = tf.contrib.rnn.BasicLSTMCell(hidden_size,state_is_tuple=True)
 #lstm_cell = tf.contrib.rnn.DropoutWrapper(
 #    lstm_cell, output_keep_prob=keep_prob)
 #cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * num_steps, state_is_tuple=True)
@@ -33,9 +33,9 @@ w1 = tf.get_variable(
         "w1", [word_embedding_size, hidden_size], dtype=tf.float32,initializer = tf.contrib.layers.xavier_initializer())
 b1 = tf.get_variable("b1", [hidden_size], dtype=tf.float32,initializer = tf.contrib.layers.xavier_initializer())
 '''
-#with tf.variable_scope("basic_lstm_cell"):#
-#	weights = tf.get_variable("weights", [word_embedding_size + hidden_size, 4 * hidden_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
-#	biases  = tf.get_variable("biases" , [4 * hidden_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+with tf.variable_scope("basic_lstm_cell"):#
+	weights = tf.get_variable("weights", [word_embedding_size + hidden_size, 4 * hidden_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+	biases  = tf.get_variable("biases" , [4 * hidden_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 
 
 outputs = []
@@ -44,7 +44,7 @@ initial_state = cell.zero_state(batch_size, tf.float32)
 #state = cell.zero_state(batch_size, tf.float32)
 #state = tf.Variable(initial_state,trainable=False) 
 state = initial_state
-with tf.variable_scope("RNN"):
+with tf.variable_scope("rnn"):
 	for time_step in range(num_steps-1):
 		if time_step > 0: tf.get_variable_scope().reuse_variables()
 		#act_input = tf.matmul(inputs[:, time_step, :], w1) + b1
@@ -52,13 +52,17 @@ with tf.variable_scope("RNN"):
 		(cell_output, state) = cell(inputs[:, time_step, :], state)
 		outputs.append(cell_output)
 
-output = tf.reshape(tf.concat(outputs,1), [-1, hidden_size])
+
+last_state_ = state
+
+output = tf.reshape(outputs, [-1, hidden_size])
 softmax_w = tf.get_variable(
         "softmax_w", [hidden_size, vocab_size], dtype=tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 softmax_b = tf.get_variable("softmax_b", [vocab_size], dtype=tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+
 logits = tf.matmul(output, softmax_w) + softmax_b
 
-loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.reshape(targets, [-1]), logits=logits)）
+loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.reshape(targets, [-1]), logits=logits))
 
 
 optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
@@ -140,8 +144,8 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 		# print("Data Done!") 
 		'''
 		feed_dict =  {input_data: batch_x, targets: batch_y}
-		if (last_state!=""):
-			feed_dict =  {input_data: batch_x, targets: batch_y,initial_state:last_state}
+		#if (last_state!=""):
+		#	feed_dict =  {input_data: batch_x, targets: batch_y,initial_state:last_state}
 		sess.run(train_op, feed_dict =feed_dict)
 
 
@@ -154,7 +158,7 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 			# Calculate batch accuracy
 			#acc = sess.run(accuracy, feed_dict = {input_data: batch_x, targets: batch_y})
 			# Calculate batch loss
-			mloss = sess.run(loss, feed_dict = {input_data: batch_x, targets: batch_y})
+			mloss = sess.run(loss, feed_dict = feed_dict)
 			acc = sess.run(accuracy,feed_dict =feed_dict)
 			print(
 				"Iter " + str(step * batch_size) + ", Minibatch Loss= " 
@@ -163,7 +167,8 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 			print ("acc: " + str(acc))
 		
 		step += 1
-		last_state = sess.run(state, feed_dict =feed_dict)
+		last_state = sess.run(last_state_, feed_dict =feed_dict)
+		#print (last_state)
 		#print (last_state[0].shape())
 		#print last_state.shpe()
 
