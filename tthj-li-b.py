@@ -18,9 +18,9 @@ print("Import packages ... Done!")
 
 # Set learning parameters
 learning_rate  = 1e-1  # learning rate
-training_iters = 1e5   # training iters
+training_iters = 100000   # training iters
 global_norm    = 10.0  # global norm
-disp_step      = 1     # display step
+disp_step      = 20     # display step
 
 # Set network parameters
 batch_size     = 64    # batch size
@@ -28,8 +28,8 @@ vocab_size     = 20000 # vocabulary size
 emb_size       = 100   # word embedding size
 seq_length     = 30    # sequence length
 state_size     = 512   # hidden state size
-keep_prob      = 1.0   # for dropout wrapper
-forget_bias    = 1.0   # for cell
+keep_prob      = 1   # for dropout wrapper
+forget_bias    = 0.0   # for cell
 emb_path       = "../data/wordembeddings-dim100.word2vec"
 
 def load_embedding(session, vocab, emb, path, dim_embedding):
@@ -95,7 +95,7 @@ pred_logits = tf.matmul(output_seq, out_weight) + out_bias
 print("Define network computation process ... Done!")
 
 # Define loss and optimizer
-loss      = tf.reduce_sum(tf.nn.sparse_softmax_cross_entropy_with_logits(logits = pred_logits, labels = y_one_col))
+loss      = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits = pred_logits, labels = y_one_col))
 opt_func  = tf.train.AdamOptimizer(learning_rate = learning_rate)
 grad, var = zip(*opt_func.compute_gradients(loss))
 grad, _   = tf.clip_by_global_norm(grad, global_norm)
@@ -126,6 +126,9 @@ f.close()
 
 print("Load dictionary ... Done!")
 
+
+temp = 0
+
 # Launch the graph
 print("Start Training!")
 f = open("../data/sentences.train", 'r')
@@ -138,9 +141,10 @@ with tf.Session() as sess:
 		
 		batch_x = []
 		while len(batch_x) < batch_size:
-
+			temp +=1
 			line = f.readline()
 			if not line:
+				temp=0
 				f.close()
 				f = open("../data/sentences.train", 'r')
 				line = f.readline()
@@ -187,25 +191,29 @@ with tf.Session() as sess:
 				"%6f" % cost + ", Accuracy = " + \
 				"%6f" % acc \
 			)
-		"""
-		org = np.array(sess.run(y_one_col, feed_dict = feed_dict)).reshape([-1, seq_length - 1])
-		pred = np.array(sess.run(tf.argmax(pred_logits, 1), feed_dict = feed_dict)).reshape([-1, seq_length - 1])
-
+	
+			org = np.array(sess.run(y_one_col, feed_dict = feed_dict)).reshape([-1, seq_length - 1])
+			pred = np.array(sess.run(tf.argmax(pred_logits, 1), feed_dict = feed_dict)).reshape([-1, seq_length - 1])
+			
+			print ("---")
+			for i in range(org.shape[0]):
+				a = ""
+				b = ""
+				for j in range(org.shape[1]):
+					a += (look_up[org[i, j]] + " ")
+					b += (look_up[pred[i, j]] + " ")
+				print(a)
+				print("")
+				print(b)
+				break
+			print ("---")
 		
-		for i in range(org.shape[0]):
-			a = ""
-			b = ""
-			for j in range(org.shape[1]):
-				a += (look_up[org[i, j]] + " ")
-				b += (look_up[pred[i, j]] + " ")
-			print(a)
-			print(b)
-		"""
+		
 		step += 1
 
 		# state_feed = sess.run(state, feed_dict = feed_dict)
 
 	print("Optimization Finished!")
-
-	save_path = saver.save(sess, "../lizuoyue-loop/model.ckpt")
+	tag = str(learning_rate)+ ' ' + str(training_iters) +'-' +  str(keep_prob) +'-' +str(forget_bias)
+	save_path = saver.save(sess, "../model/model"+tag+".ckpt")
 	print("Model saved in file: %s" % save_path)

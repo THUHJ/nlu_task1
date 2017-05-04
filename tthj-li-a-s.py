@@ -11,16 +11,14 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 # Import packages
 import tensorflow as tf
 import numpy as np
-import random
-np.set_printoptions(threshold = 30)
 
 print("Import packages ... Done!")
 
 # Set learning parameters
 learning_rate  = 1e-1  # learning rate
-training_iters = 2e5   # training iters
-global_norm    = 10.0  # global norm
-disp_step      = 1     # display step
+training_iters = 1e4   # training iters
+global_norm    = 1.0   # global norm
+disp_step      = 10     # display step
 
 # Set network parameters
 batch_size     = 64    # batch size
@@ -31,8 +29,8 @@ state_size     = 512   # hidden state size
 keep_prob      = 1.0   # for dropout wrapper
 
 # Define RNN network input and output
-x = tf.placeholder(tf.int32  , [None, seq_length    ])
-y = tf.placeholder(tf.int32  , [None, seq_length - 1])
+x = tf.placeholder(tf.int32, [None, seq_length    ])
+y = tf.placeholder(tf.int32, [None, seq_length - 1])
 y_one_col = tf.reshape(y, [-1])
 y_one_hot = tf.reshape(tf.one_hot(y, vocab_size), [-1, vocab_size])
 
@@ -53,7 +51,8 @@ input_emb   = tf.nn.embedding_lookup(emb_weight, x)
 input_seq   = tf.unstack(input_emb, axis = 1)
 lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, forget_bias = 0.0, reuse = True)
 lstm_cell   = tf.contrib.rnn.DropoutWrapper(lstm_cell, output_keep_prob = keep_prob)
-state       = lstm_cell.zero_state(batch_size, tf.float32)
+init_state  = lstm_cell.zero_state(batch_size, tf.float32)
+state       = init_state
 output_seq  = []
 for input_unit in input_seq:
 	output_unit, state = lstm_cell(input_unit, state)
@@ -77,7 +76,8 @@ true_pred = tf.equal(tf.argmax(pred_logits, 1), tf.to_int64(y_one_col))
 accuracy  = tf.reduce_mean(tf.cast(true_pred, tf.float32))
 
 # Initialize the variables
-init = tf.global_variables_initializer()
+init      = tf.global_variables_initializer()
+saver     = tf.train.Saver()
 
 print("Define loss, optimizer and evaluate function ... Done!")
 
@@ -98,7 +98,7 @@ print("Load dictionary ... Done!")
 
 # Launch the graph
 print("Start Training!")
-f = open("../data/1.txt", 'r')
+f = open("../data/sentences.train", 'r')
 with tf.Session() as sess:
 	sess.run(init)
 	step = 1
@@ -111,7 +111,7 @@ with tf.Session() as sess:
 			line = f.readline()
 			if not line:
 				f.close()
-				f = open("../data/1.txt", 'r')
+				f = open("../data/sentences.train", 'r')
 				line = f.readline()
 
 			words = line.strip().split(' ')
@@ -142,12 +142,9 @@ with tf.Session() as sess:
 		if step == 1:
 			feed_dict = {x: batch_x, y: batch_y}
 		else:
-			feed_dict = {x: batch_x, y: batch_y, state: state_feed}
+			feed_dict = {x: batch_x, y: batch_y, init_state: state_feed}
 
 		sess.run(optimizer, feed_dict = feed_dict)
-
-		print(np.array(sess.run(y_one_col, feed_dict = feed_dict)).reshape([-1, seq_length - 1]))
-		print(np.array(sess.run(tf.argmax(pred_logits, 1), feed_dict = feed_dict)).reshape([-1, seq_length - 1]))
 
 		if step % disp_step == 0:
 			# Calculate batch accuracy
@@ -159,11 +156,25 @@ with tf.Session() as sess:
 				"%6f" % cost + ", Accuracy = " + \
 				"%6f" % acc \
 			)
+
+			org = np.array(sess.run(y_one_col, feed_dict = feed_dict)).reshape([-1, seq_length - 1])
+			pred = np.array(sess.run(tf.argmax(pred_logits, 1), feed_dict = feed_dict)).reshape([-1, seq_length - 1])
+
+			for i in range(org.shape[0]):
+				a = ""
+				b = ""
+				for j in range(org.shape[1]):
+					a += (look_up[org[i, j]] + " ")
+					b += (look_up[pred[i, j]] + " ")
+				print(a)
+				print(b)
+				break
+
 		step += 1
 
 		state_feed = sess.run(state, feed_dict = feed_dict)
 
 	print("Optimization Finished!")
 
-	save_path = saver.save(sess, "lizuoyue-model.ckpt")
+	save_path = saver.save(sess, "../model/reuse-s-model.ckpt")
 	print("Model saved in file: %s" % save_path)
