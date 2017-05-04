@@ -16,9 +16,9 @@ print("Import packages ... Done!")
 
 # Set learning parameters
 learning_rate  = 5e-2  # learning rate
-training_iters = 1e4   # training iters
+training_iters = 2e4   # training iters
 global_norm    = 10.0  # global norm
-disp_step      = 1     # display step
+disp_step      = 5     # display step
 
 # Set network parameters
 batch_size     = 64    # batch size
@@ -72,9 +72,14 @@ for input_unit in input_seq:
 	output_seq.append(output_unit)
 output_seq.pop()
 final_state = state
-print (output_seq.shape)
-output_seq  = tf.reshape(output_seq, [-1, state_size])
+# 29 * 64 * 512
+#print (tf.concat(output_seq,1).shape)
+
+output_seq  = tf.reshape(tf.concat(output_seq,1), [-1, state_size])
+
 pred_logits = tf.matmul(output_seq, out_weight) + out_bias
+print (pred_logits.shape)
+print (y.shape)
 
 print("Define network computation process ... Done!")
 
