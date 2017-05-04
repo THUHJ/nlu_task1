@@ -51,10 +51,11 @@ input_emb   = tf.nn.embedding_lookup(emb_weight, x)
 input_seq   = tf.unstack(input_emb, axis = 1)
 lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, forget_bias = 0.0)
 lstm_cell   = tf.contrib.rnn.DropoutWrapper(lstm_cell, output_keep_prob = keep_prob)
-state       = lstm_cell.zero_state(batch_size, tf.float32)
+init_state = lstm_cell.zero_state(batch_size, tf.float32)
+state       = init_state
 output_seq  = []
 time_step=0
-with tf.variable_scope("rnn"):
+with tf.variable_scope("RNN"):
 	for input_unit in input_seq:
 		if time_step > 0: tf.get_variable_scope().reuse_variables()
 		time_step+=1
@@ -68,7 +69,7 @@ pred_logits = tf.matmul(output_seq, out_weight) + out_bias
 print("Define network computation process ... Done!")
 
 # Define loss and optimizer
-loss      = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits = pred_logits, labels = y_one_col))
+loss      = tf.reduce_sum(tf.nn.sparse_softmax_cross_entropy_with_logits(logits = pred_logits, labels = y_one_col))/batch_size
 opt_func  = tf.train.AdamOptimizer(learning_rate = learning_rate)
 grad, var = zip(*opt_func.compute_gradients(loss))
 grad, _   = tf.clip_by_global_norm(grad, global_norm)
@@ -145,7 +146,7 @@ with tf.Session() as sess:
 		if step == 1:
 			feed_dict = {x: batch_x, y: batch_y}
 		else:
-			feed_dict = {x: batch_x, y: batch_y, state: state_feed}
+			feed_dict = {x: batch_x, y: batch_y, init_state: state_feed}
 
 		sess.run(optimizer, feed_dict = feed_dict)
 
