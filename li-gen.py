@@ -22,8 +22,9 @@ vocab_size     = 20000 # vocabulary size
 emb_size       = 100   # word embedding size
 seq_length     = 20    # sequence length
 state_size     = 512   # hidden state size
-keep_prob      = 0.4   # for dropout wrapper
-forget_bias    = 0.7
+keep_prob      = 0.5   # for dropout wrapper
+forget_bias    = 1.0
+model_path     = "../li-a-s/li-a-s-model.ckpt"
 
 # Define RNN network input and output
 x = tf.placeholder(tf.int32, [batch_size])
@@ -44,7 +45,8 @@ print("Define network parameters ... Done!")
 input_emb   = tf.nn.embedding_lookup(emb_weight, x)
 lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, forget_bias = forget_bias, reuse = True)
 lstm_cell   = tf.contrib.rnn.DropoutWrapper(lstm_cell, output_keep_prob = keep_prob)
-state       = lstm_cell.zero_state(batch_size, tf.float32)
+init_state       = lstm_cell.zero_state(batch_size, tf.float32)
+state = init_state
 output, state = lstm_cell(input_emb, state)
 pred_logits = tf.matmul(output, out_weight) + out_bias
 next_word = tf.argmax(pred_logits, 1)
@@ -71,7 +73,7 @@ print("Start generation!")
 saver = tf.train.Saver()
 with tf.Session() as sess:
 
-	saver.restore(sess, '../lizuoyue-loop-s/model.ckpt')
+	saver.restore(sess, model_path)
 
 	f = open("../data/sentences.continuation", 'r')
 	line = f.readline()
@@ -91,7 +93,7 @@ with tf.Session() as sess:
 			if step == 1:
 				feed_dict = {x: np.array([idx])}
 			else:
-				feed_dict = {x: np.array([idx]), state: state_feed}
+				feed_dict = {x: np.array([idx]), init_state: state_feed}
 
 			next_idx = sess.run(next_word, feed_dict = feed_dict)
 			state_feed = sess.run(state, feed_dict = feed_dict)
@@ -99,7 +101,7 @@ with tf.Session() as sess:
 
 		next_words = ""
 		for i in range(len(code), seq_length):
-			feed_dict = {x: next_idx, state: state_feed}
+			feed_dict = {x: next_idx, init_state: state_feed}
 			next_idx = sess.run(next_word, feed_dict = feed_dict)
 			state_feed = sess.run(state, feed_dict = feed_dict)
 			next_words += look_up[next_idx[0]]
