@@ -16,9 +16,9 @@ print("Import packages ... Done!")
 
 # Set learning parameters
 learning_rate  = 5e-2  # learning rate
-training_iters = 1e4   # training iters
+training_iters = 2e4   # training iters
 global_norm    = 10.0  # global norm
-disp_step      = 1     # display step
+disp_step      = 5     # display step
 
 # Set network parameters
 batch_size     = 64    # batch size
@@ -182,6 +182,7 @@ with tf.Session() as sess:
 					b += (look_up[pred[i, j]] + " ")
 				print("# " + a + "\n")
 				print("@ " + b + "\n")
+				break
 			# """
 
 		state_feed = sess.run(final_state, feed_dict = feed_dict)
