@@ -12,7 +12,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import tensorflow as tf
 import numpy as np
 import random
-np.set_printoptions(threshold = 30)
 
 print("Import packages ... Done!")
 
@@ -24,7 +23,7 @@ seq_length     = 20    # sequence length
 state_size     = 512   # hidden state size
 keep_prob      = 0.5   # for dropout wrapper
 forget_bias    = 1.0
-model_path     = "../li-a-s/li-a-s-model.ckpt"
+model_path     = "../li-a-200.ckpt"
 
 # Define RNN network input and output
 x = tf.placeholder(tf.int32, [batch_size])

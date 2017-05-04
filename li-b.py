@@ -1,5 +1,5 @@
 # ETH Zurich, Semester S17
-# Natural Language Understanding, Task 1
+# Natural Language Understanding, Task 1(B)
 # Team Members: Jie Huang, Yanping Xie, Zuoyue Li
 
 from __future__ import print_function
@@ -16,10 +16,10 @@ from gensim import models
 print("Import packages ... Done!")
 
 # Set learning parameters
-learning_rate  = 1e-3  # learning rate
-training_iters = 1e4   # training iters
-global_norm    = 10.0  # global norm
-disp_step      = 1     # display step
+learning_rate  = 5e-3  # learning rate
+training_iters = 2e6   # training iters
+clip_norm      = 10.0  # global norm
+disp_step      = 10    # display step
 
 # Set network parameters
 batch_size     = 64    # batch size
@@ -27,9 +27,7 @@ vocab_size     = 20000 # vocabulary size
 emb_size       = 100   # word embedding size
 seq_length     = 30    # sequence length
 state_size     = 512   # hidden state size
-keep_prob      = 0.5   # for dropout wrapper
-forget_bias    = 1.0   # for cell
-model_path     = "../li-b-model.ckpt"
+model_save     = 600   # save per number of batches
 emb_path       = "../data/wordembeddings-dim100.word2vec"
 
 # Construct vocabulary index dictionary
@@ -42,7 +40,7 @@ while line:
 	look_up.append(line.strip())
 	vocabulary[look_up[idx]] = idx;
 	idx += 1
-	line  = f.readline()
+	line = f.readline()
 f.close()
 
 print("Load dictionary ... Done!")
@@ -79,9 +77,9 @@ x = tf.placeholder(tf.int32, [batch_size, seq_length       ])
 y = tf.placeholder(tf.int32, [batch_size * (seq_length - 1)])
 
 # Define word embeddings, output weight and output bias
-emb_weight = tf.get_variable("emb_weight", [vocab_size, emb_size  ], dtype = tf.float32, trainable = False)
-out_weight = tf.get_variable("out_weight", [state_size, vocab_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
-out_bias   = tf.get_variable("out_bias"  , [vocab_size]            , dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+emb_weight  = tf.get_variable("emb_weight", [vocab_size, emb_size  ], dtype = tf.float32, trainable = False)
+out_weight  = tf.get_variable("out_weight", [state_size, vocab_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+out_bias    = tf.get_variable("out_bias"  , [vocab_size]            , dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 
 # Define LSTM cell weights and biases
 with tf.variable_scope("basic_lstm_cell"):
@@ -94,8 +92,7 @@ print("Define network parameters ... Done!")
 # Define RNN computation process
 input_emb   = tf.nn.embedding_lookup(emb_weight, x)
 input_seq   = tf.unstack(input_emb, axis = 1)
-lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, reuse = True, forget_bias = forget_bias)
-lstm_cell   = tf.contrib.rnn.DropoutWrapper(lstm_cell, output_keep_prob = keep_prob)
+lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, reuse = True)
 init_state  = lstm_cell.zero_state(batch_size, tf.float32)
 state       = init_state
 output_seq  = []
@@ -110,15 +107,15 @@ pred_logits = tf.matmul(output_seq, out_weight) + out_bias
 print("Define network computation process ... Done!")
 
 # Define loss and optimizer
-loss      = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits = pred_logits, labels = y))
-opt_func  = tf.train.AdamOptimizer(learning_rate = learning_rate)
-grad, var = zip(*opt_func.compute_gradients(loss))
-grad, _   = tf.clip_by_global_norm(grad, global_norm)
-optimizer = opt_func.apply_gradients(zip(grad, var))
+loss        = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits = pred_logits, labels = y))
+opt_func    = tf.train.AdamOptimizer(learning_rate = learning_rate)
+grad, var   = zip(*opt_func.compute_gradients(loss))
+grads, _    = tf.clip_by_global_norm(grad, clip_norm)
+optimizer   = opt_func.apply_gradients(zip(grads, var))
 
 # Initialize the variables
-init      = tf.global_variables_initializer()
-saver     = tf.train.Saver()
+init        = tf.global_variables_initializer()
+saver       = tf.train.Saver()
 
 print("Define loss, optimizer and evaluate function ... Done!")
 
@@ -144,16 +141,16 @@ with tf.Session() as sess:
 				line = f.readline()
 
 			words = line.strip().split(' ')
-			if len(words) <= seq_length - 2: 
+			if len(words) < seq_length - 1:
 				code = [vocabulary["<bos>"]]
 				for word in words:
 					if word in vocabulary:
 						code.append(vocabulary[word])
 					else:
 						code.append(vocabulary["<unk>"])
-				while len(code) <= seq_length - 2:
-					code.append(vocabulary["<pad>"])
 				code.append(vocabulary["<eos>"])
+				while len(code) < seq_length:
+					code.append(vocabulary["<pad>"])
 				batch_x.append(code)
 		
 		# Random generation of input data
@@ -171,7 +168,7 @@ with tf.Session() as sess:
 		batch_m = batch_x[:, 1: seq_length].transpose()
 		batch_y = batch_m.reshape([-1])
 
-		if step == 1:
+		if step >= 1:
 			feed_dict = {x: batch_x, y: batch_y}
 		else:
 			feed_dict = {x: batch_x, y: batch_y, init_state: state_feed}
@@ -198,20 +195,24 @@ with tf.Session() as sess:
 				", Perp = %6f" % perp \
 			)
 
-		# Print prediction
-		# """
-		pred = np.array(sess.run(tf.argmax(pred_logits, 1), feed_dict = feed_dict)).reshape([-1, batch_size]).transpose()
-		for i in range(pred.shape[0]):
-			a = ""
-			b = ""
-			for j in range(pred.shape[1]):
-				a += (look_up[batch_x[i, j + 1]] + " ")
-				b += (look_up[pred[i, j]] + " ")
-			print(a)
-			print(b)
-		# """
+			# Print prediction
+			# """
+			pred = np.array(sess.run(tf.argmax(pred_logits, 1), feed_dict = feed_dict)).reshape([-1, batch_size]).transpose()
+			for i in range(pred.shape[0]):
+				a = ""
+				b = ""
+				for j in range(pred.shape[1]):
+					a += (look_up[batch_x[i, j + 1]] + " ")
+					b += (look_up[pred[i, j]] + " ")
+				print("# " + a + "\n")
+				print("@ " + b + "\n")
+				break
+			# """
 
-		state_feed = sess.run(final_state, feed_dict = feed_dict)
+		if step % model_save == 0:
+			save_path = saver.save(sess, "../li-b-" + str(step) + ".ckpt")
+
+		# state_feed = sess.run(final_state, feed_dict = feed_dict)
 		step += 1
 
 	print("Optimization Finished!")

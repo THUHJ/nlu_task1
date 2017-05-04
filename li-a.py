@@ -1,5 +1,5 @@
 # ETH Zurich, Semester S17
-# Natural Language Understanding, Task 1
+# Natural Language Understanding, Task 1(A)
 # Team Members: Jie Huang, Yanping Xie, Zuoyue Li
 
 from __future__ import print_function
@@ -15,10 +15,10 @@ import numpy as np
 print("Import packages ... Done!")
 
 # Set learning parameters
-learning_rate  = 5e-2  # learning rate
-training_iters = 1e4   # training iters
-global_norm    = 10.0  # global norm
-disp_step      = 1     # display step
+learning_rate  = 5e-3  # learning rate
+training_iters = 2e6   # training iters
+clip_norm      = 10.0  # global norm
+disp_step      = 10    # display step
 
 # Set network parameters
 batch_size     = 64    # batch size
@@ -26,7 +26,7 @@ vocab_size     = 20000 # vocabulary size
 emb_size       = 100   # word embedding size
 seq_length     = 30    # sequence length
 state_size     = 512   # hidden state size
-model_path     = "../li-a-model.ckpt"
+model_save     = 600   # save per number of batches
 
 # Construct vocabulary index dictionary
 vocabulary = {}
@@ -38,7 +38,7 @@ while line:
 	look_up.append(line.strip())
 	vocabulary[look_up[idx]] = idx;
 	idx += 1
-	line  = f.readline()
+	line = f.readline()
 f.close()
 
 print("Load dictionary ... Done!")
@@ -63,7 +63,7 @@ print("Define network parameters ... Done!")
 # Define RNN computation process
 input_emb   = tf.nn.embedding_lookup(emb_weight, x)
 input_seq   = tf.unstack(input_emb, axis = 1)
-lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, forget_bias = 0.0, reuse = True)
+lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, reuse = True)
 init_state  = lstm_cell.zero_state(batch_size, tf.float32)
 state       = init_state
 output_seq  = []
@@ -81,8 +81,8 @@ print("Define network computation process ... Done!")
 loss        = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits = pred_logits, labels = y))
 opt_func    = tf.train.AdamOptimizer(learning_rate = learning_rate)
 grad, var   = zip(*opt_func.compute_gradients(loss))
-grad, _     = tf.clip_by_global_norm(grad, global_norm)
-optimizer   = opt_func.apply_gradients(zip(grad, var))
+grads, _    = tf.clip_by_global_norm(grad, clip_norm)
+optimizer   = opt_func.apply_gradients(zip(grads, var))
 
 # Initialize the variables
 init        = tf.global_variables_initializer()
@@ -118,9 +118,9 @@ with tf.Session() as sess:
 						code.append(vocabulary[word])
 					else:
 						code.append(vocabulary["<unk>"])
-				while len(code) <= seq_length - 2:
-					code.append(vocabulary["<pad>"])
 				code.append(vocabulary["<eos>"])
+				while len(code) < seq_length:
+					code.append(vocabulary["<pad>"])
 				batch_x.append(code)
 
 		# Random generation of input data
@@ -138,7 +138,7 @@ with tf.Session() as sess:
 		batch_m = batch_x[:, 1: seq_length].transpose()
 		batch_y = batch_m.reshape([-1])
 
-		if step == 1:
+		if step >= 1:
 			feed_dict = {x: batch_x, y: batch_y}
 		else:
 			feed_dict = {x: batch_x, y: batch_y, init_state: state_feed}
@@ -176,9 +176,13 @@ with tf.Session() as sess:
 					b += (look_up[pred[i, j]] + " ")
 				print("# " + a + "\n")
 				print("@ " + b + "\n")
+				break
 			# """
 
-		state_feed = sess.run(final_state, feed_dict = feed_dict)
+		if step % model_save == 0:
+			save_path = saver.save(sess, "../li-a-" + str(step) + ".ckpt")
+
+		# state_feed = sess.run(final_state, feed_dict = feed_dict)
 		step += 1
 
 	print("Optimization Finished!")
