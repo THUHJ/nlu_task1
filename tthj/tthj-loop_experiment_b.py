@@ -17,7 +17,7 @@ batch_size = 64
 vocab_size = 20000
 training_iters = 100000
 display_step = 1
-learning_rate = 0.1
+learning_rate = 0.01
 num_layers = 2
 
 def load_embedding(session, vocab, emb, path, dim_embedding):
@@ -202,19 +202,19 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 		# print("Optimize Done!")
 		
 		if step % display_step == 0:
-			#print(sess.run(targets,feed_dict = feed_dict))
-			#tmp = sess.run(tf.argmax(pred, 2), feed_dict = feed_dict)
-			#print(tmp[0:10][0:10])
-			#out.write(str(tmp[0:10][0:10])+"\n")
-			#mloss = sess.run(loss, feed_dict = feed_dict)
+			print(sess.run(targets,feed_dict = feed_dict))
+			tmp = sess.run(tf.argmax(pred, 2), feed_dict = feed_dict)
+			print(tmp[0:10][0:10])
+			out.write(str(tmp[0:10][0:10])+"\n")
+			mloss = sess.run(loss, feed_dict = feed_dict)
 			#acc = sess.run(,feed_dict = {input_data: batch_x, targets: batch_y})
 			[logit,acc] = sess.run([logits,accuracy],feed_dict =feed_dict)
 
-			#print (logit[0:10][0:10])
-			#out.write(str(logit[0:10][0:10])+"\n")
-			#print("Iter " + str(step * batch_size) + ", Minibatch Loss= " + str(mloss))
-			#out.write(str(acc)+"\n")
-			#out.flush();
+			print (logit[0:10][0:10])
+			out.write(str(logit[0:10][0:10])+"\n")
+			print("Iter " + str(step * batch_size) + ", Minibatch Loss= " + str(mloss))
+			out.write(str(acc)+"\n")
+			out.flush();
 			print ("acc: " + str(acc))
 		
 		step += 1
