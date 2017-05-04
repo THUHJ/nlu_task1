@@ -146,7 +146,7 @@ with tf.Session() as sess:
 		"""
 
 		batch_x = np.array(batch_x)
-		#batch_m = batch_x[:, 1: seq_length].transpose()
+		batch_m = batch_x[:, 1: seq_length].transpose()
 		batch_y = batch_x[:,1:].reshape([-1])
 
 		if step == 1:
