@@ -22,7 +22,7 @@ emb_size     = 100   # word embedding size
 seq_length   = 20    # sequence length
 state_size   = 1024   # hidden state size
 softmax_size = 512   # softmax size
-model_path   = "../li-c-2400.ckpt"
+model_path   = "../model/li-c-15600.ckpt"
 
 # Construct vocabulary index dictionary
 vocabulary = {}
