@@ -15,7 +15,7 @@ import numpy as np
 print("Import packages ... Done!")
 
 # Set learning parameters
-learning_rate  = 5e-2  # learning rate
+learning_rate  = 0.025 # learning rate
 training_iters = 2e7   # training iters
 clip_norm      = 10.0  # global norm
 disp_step      = 10    # display step
