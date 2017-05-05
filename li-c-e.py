@@ -21,7 +21,7 @@ vocab_size   = 20000 # vocabulary size
 emb_size     = 100   # word embedding size
 state_size   = 1024   # hidden state size
 softmax_size = 512   # softmax size
-model_path   = "../li-a-4800.ckpt"
+model_path   = "../li-c-3600.ckpt"
 
 # Construct vocabulary index dictionary
 vocabulary = {}
