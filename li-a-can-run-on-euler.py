@@ -15,7 +15,7 @@ import numpy as np
 print("Import packages ... Done!")
 
 # Set learning parameters
-learning_rate  = 5e-3  # learning rate
+learning_rate  = 5e-2  # learning rate
 training_iters = 2e7   # training iters
 clip_norm      = 10.0  # global norm
 disp_step      = 10    # display step
@@ -27,6 +27,7 @@ emb_size       = 100   # word embedding size
 seq_length     = 30    # sequence length
 state_size     = 512   # hidden state size
 model_save     = 600   # save per number of batches
+NUM_THREADS    = 8
 
 # Construct vocabulary index dictionary
 vocabulary = {}
@@ -66,13 +67,14 @@ input_seq   = tf.unstack(input_emb, axis = 1)
 lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size)
 init_state  = lstm_cell.zero_state(batch_size, tf.float32)
 state       = init_state
-output_seq = []
-time_step =0
+
+output_seq  = []
+time_step   = 0
 with tf.variable_scope("RNN"):
 	for input_unit in input_seq:
-		if time_step > 0: tf.get_variable_scope().reuse_variables()
-		time_step+=1
-
+		if time_step > 0:
+			tf.get_variable_scope().reuse_variables()
+		time_step += 1
 		output_unit, state = lstm_cell(input_unit, state)
 		output_seq.append(output_unit)
 output_seq.pop()
@@ -98,10 +100,10 @@ print("Define loss, optimizer and evaluate function ... Done!")
 
 # Launch the graph
 print("Start training!")
-NUM_THREADS = 8
-out = open("la-log.txt","w")
+
+out = open("la-log.txt", "w")
 f = open("../data/sentences.train", 'r')
-with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,intra_op_parallelism_threads=NUM_THREADS)) as sess:
+with tf.Session(config = tf.ConfigProto(inter_op_parallelism_threads = NUM_THREADS, intra_op_parallelism_threads = NUM_THREADS)) as sess:
 
 	sess.run(init)
 	step = 1
@@ -172,7 +174,7 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 				", Loss = %6f" % cost + \
 				", Perp = %6f" % perp \
 			)
-			out.write(str(step * batch_size)+" "+str(cost)+" "+str(perp)+"\n")
+			out.write(str(step * batch_size) + " " + str(cost) + " " + str(perp) + "\n")
 			out.flush()
 
 			# Print prediction
