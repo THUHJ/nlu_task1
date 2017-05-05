@@ -220,7 +220,7 @@ with tf.Session() as sess:
 
 	print("Optimization Finished!")
 
-	save_path = saver.save(sess, model_path)
+	save_path = saver.save(sess, "li-c-final.ckpt")
 	print("Model saved in file: %s" % save_path)
 
 f.close()
