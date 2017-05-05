@@ -20,7 +20,7 @@ batch_size  = 1
 vocab_size  = 20000 # vocabulary size
 emb_size    = 100   # word embedding size
 state_size  = 512   # hidden state size
-model_path  = "../model/li-b-20400.ckpt"
+model_path  ="../model/li-b-28800.ckpt"
 
 # Construct vocabulary index dictionary
 vocabulary = {}
@@ -55,10 +55,11 @@ print("Define network parameters ... Done!")
 
 # Define RNN computation process
 input_emb   = tf.nn.embedding_lookup(emb_weight, x)
-lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size, reuse = True)
+lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size)
 init_state  = lstm_cell.zero_state(batch_size, tf.float32)
 state       = init_state
-out, state  = lstm_cell(input_emb, state)
+with tf.variable_scope("RNN"):
+	out, state  = lstm_cell(input_emb, state)
 final_state = state
 pred_logits = tf.matmul(out, out_weight) + out_bias
 
