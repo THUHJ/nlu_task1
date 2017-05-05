@@ -99,6 +99,7 @@ print("Define loss, optimizer and evaluate function ... Done!")
 # Launch the graph
 print("Start training!")
 NUM_THREADS = 8
+out = open("la-log.txt","w")
 f = open("../data/sentences.train", 'r')
 with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,intra_op_parallelism_threads=NUM_THREADS)) as sess:
 
@@ -171,9 +172,11 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 				", Loss = %6f" % cost + \
 				", Perp = %6f" % perp \
 			)
+			out.write(str(step * batch_size)+" "+str(cost)+" "+str(perp)+"\n")
+			out.flush()
 
 			# Print prediction
-			# """
+			"""
 			pred = np.array(sess.run(tf.argmax(pred_logits, 1), feed_dict = feed_dict)).reshape([-1, batch_size]).transpose()
 			for i in range(pred.shape[0]):
 				a = ""
@@ -184,7 +187,7 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 				print("# " + a + "\n")
 				print("@ " + b + "\n")
 				break
-			# """
+			"""
 
 		if step % model_save == 0:
 			save_path = saver.save(sess, "../li-a-" + str(step) + ".ckpt")
@@ -196,5 +199,5 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 	model_path = "../final_lia.ckpt"
 	save_path = saver.save(sess, model_path)
 	print("Model saved in file: %s" % save_path)
-
+out.close()
 f.close()

@@ -126,7 +126,7 @@ print("Define loss, optimizer and evaluate function ... Done!")
 
 # Launch the graph
 print("Start training!")
-out = open("lc-log.txt","w")
+out = open("lb-log.txt","w")
 f = open("../data/sentences.train", 'r')
 NUM_THREADS=8
 with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,intra_op_parallelism_threads=NUM_THREADS)) as sess:
