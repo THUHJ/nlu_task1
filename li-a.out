@@ -2589,4 +2589,60 @@ Iter 330880, Loss = 2.123841, Perp = 18.536205
 
 @ `` i . , '' he said her . the ground . then the smile <unk> 's it ? '' <eos> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
 
-Iter 331
+Iter 331520, Loss = 1.675960, Perp = 18.243463
+# do n't leave your friend 's place , and do n't drink anything you did n't pour yourself . '' <eos> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+
+@ `` n't worry me life . mind . '' i n't be . . 're . want . . <eos> <eos> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+
+Iter 332160, Loss = 1.775897, Perp = 18.856361
+# ellis said . <eos> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+
+@ `` 's , <eos> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+
+Iter 332800, Loss = 1.703104, Perp = 18.966842
+# she passed both babes off to melaina . <eos> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+
+@ `` was the of and the the . <eos> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+
+Iter 333440, Loss = 1.725935, Perp = 18.206178
+# lies ! <eos> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+
+@ `` , <eos> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+
+Iter 334080, Loss = 1.548260, Perp = 17.211413
+# `` i thought you were my friend . <eos> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+
+@ `` i 'm you were going friend . '' <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+
+Iter 334720, Loss = 1.721920, Perp = 17.245308
+# `` damn , '' i said , coughing as i exhaled . <eos> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+
+@ `` i it '' i said . and . i walked . <eos> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+
+Iter 335360, Loss = 1.739752, Perp = 16.039332
+# yet here he was , trying to <unk> the conversation into the ongoing battle between two factions of the library board . <eos> <pad> <pad> <pad> <pad> <pad> <pad> 
+
+@ `` he , was a and to keep the <unk> . the <unk> <unk> . them <unk> . the <unk> . . <eos> <pad> <pad> <pad> <pad> <pad> <pad> 
+
+Iter 336000, Loss = 1.926357, Perp = 23.316937
+# `` very well . '' <eos> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+
+@ `` i well , <eos> <eos> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+
+Iter 336640, Loss = 1.764927, Perp = 17.159969
+# `` wait ! <eos> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+
+@ `` i , '' <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+
+Iter 337280, Loss = 1.598020, Perp = 17.409634
+# `` copper . <eos> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+
+@ `` i , '' <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+
+Iter 337920, Loss = 1.629153, Perp = 16.364345
+# i 've been trying to figure out how to do that since you gave them to me . <eos> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+
+@ `` was been a to get out what to do this . i have me a the . <eos> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> <pad> 
+
+Iter 338560, Loss = 1.856194, Perp = 21.700071
+# `` have n't you read the reports ? '' <eos> <pad> <pad> <pad

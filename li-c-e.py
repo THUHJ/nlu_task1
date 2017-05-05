@@ -16,11 +16,12 @@ import random
 print("Import packages ... Done!")
 
 # Set network parameters
-batch_size  = 1
-vocab_size  = 20000 # vocabulary size
-emb_size    = 100   # word embedding size
-state_size  = 512   # hidden state size
-model_path  = "../li-a-4800.ckpt"
+batch_size   = 1
+vocab_size   = 20000 # vocabulary size
+emb_size     = 100   # word embedding size
+state_size   = 1024   # hidden state size
+softmax_size = 512   # softmax size
+model_path   = "../li-a-4800.ckpt"
 
 # Construct vocabulary index dictionary
 vocabulary = {}
@@ -41,9 +42,10 @@ print("Load dictionary ... Done!")
 x = tf.placeholder(tf.int32, [batch_size])
 
 # Define word embeddings, output weight and output bias
-emb_weight  = tf.get_variable("emb_weight", [vocab_size, emb_size  ], dtype = tf.float32, trainable = True)
-out_weight  = tf.get_variable("out_weight", [state_size, vocab_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
-out_bias    = tf.get_variable("out_bias"  , [vocab_size]            , dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+emb_weight  = tf.get_variable("emb_weight", [vocab_size, emb_size    ], dtype = tf.float32, trainable = True)
+out_weight  = tf.get_variable("out_weight", [softmax_size, vocab_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+out_bias    = tf.get_variable("out_bias"  , [vocab_size              ], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+p_weight    = tf.get_variable("p_weight"  , [state_size, softmax_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 
 # Define LSTM cell weights and biases
 with tf.variable_scope("basic_lstm_cell"):
@@ -60,7 +62,8 @@ init_state  = lstm_cell.zero_state(batch_size, tf.float32)
 state       = init_state
 out, state  = lstm_cell(input_emb, state)
 final_state = state
-pred_logits = tf.matmul(out, out_weight) + out_bias
+out_softmax = tf.matmul(out, p_weight)
+pred_logits = tf.matmul(out_softmax, out_weight) + out_bias
 
 # Initialize the variables
 saver       = tf.train.Saver()
