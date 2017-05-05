@@ -66,7 +66,7 @@ input_seq   = tf.unstack(input_emb, axis = 1)
 lstm_cell   = tf.contrib.rnn.BasicLSTMCell(state_size)
 init_state  = lstm_cell.zero_state(batch_size, tf.float32)
 state       = init_state
-
+output_seq = []
 time_step =0
 with tf.variable_scope("RNN"):
 	for input_unit in input_seq:
@@ -106,6 +106,7 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 	step = 1
 
 	while step * batch_size < training_iters:
+		
 
 		batch_x = []
 		while len(batch_x) < batch_size:

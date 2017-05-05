@@ -78,7 +78,7 @@ x = tf.placeholder(tf.int32, [batch_size, seq_length       ])
 y = tf.placeholder(tf.int32, [batch_size * (seq_length - 1)])
 
 # Define word embeddings, output weight and output bias
-emb_weight  = tf.get_variable("emb_weight", [vocab_size, emb_size    ], dtype = tf.float32, trainable = False)
+emb_weight  = tf.get_variable("emb_weight", [vocab_size, emb_size    ], dtype = tf.float32, trainable = True)
 out_weight  = tf.get_variable("out_weight", [softmax_size, vocab_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 out_bias    = tf.get_variable("out_bias"  , [vocab_size              ], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 p_weight    = tf.get_variable("p_weight"  , [state_size, softmax_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
@@ -129,7 +129,7 @@ print("Define loss, optimizer and evaluate function ... Done!")
 
 # Launch the graph
 print("Start training!")
-
+out = open("lc-log.txt","w")
 f = open("../data/sentences.train", 'r')
 NUM_THREADS = 8
 with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,intra_op_parallelism_threads=NUM_THREADS)) as sess:
@@ -203,9 +203,11 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 				", Loss = %6f" % cost + \
 				", Perp = %6f" % perp \
 			)
+			out.write(str(step * batch_size)+" "+str(cost)+" "+str(perp)+"\n")
+			out.flush()
 
 			# Print prediction
-			# """
+			"""
 			pred = np.array(sess.run(tf.argmax(pred_logits, 1), feed_dict = feed_dict)).reshape([-1, batch_size]).transpose()
 			for i in range(pred.shape[0]):
 				a = ""
@@ -216,7 +218,7 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 				print("# " + a + "\n")
 				print("@ " + b + "\n")
 				break
-			# """
+			 """
 
 		if step % model_save == 0:
 			save_path = saver.save(sess, "../li-c-" + str(step) + ".ckpt")
@@ -228,5 +230,5 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 	model_path = "final-li-c.ckpt"
 	save_path = saver.save(sess, model_path)
 	print("Model saved in file: %s" % save_path)
-
+out.close()
 f.close()
