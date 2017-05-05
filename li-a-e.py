@@ -1,5 +1,5 @@
 # ETH Zurich, Semester S17
-# Natural Language Understanding, Task 1
+# Natural Language Understanding, Task 1(A) Evaluation
 # Team Members: Jie Huang, Yanping Xie, Zuoyue Li
 
 from __future__ import print_function
@@ -19,7 +19,6 @@ print("Import packages ... Done!")
 batch_size  = 1
 vocab_size  = 20000 # vocabulary size
 emb_size    = 100   # word embedding size
-seq_length  = 20    # sequence length
 state_size  = 512   # hidden state size
 model_path  = "../li-a-4800.ckpt"
 
@@ -62,7 +61,6 @@ state       = init_state
 out, state  = lstm_cell(input_emb, state)
 final_state = state
 pred_logits = tf.matmul(out, out_weight) + out_bias
-next_word   = tf.argmax(pred_logits, 1)
 
 # Initialize the variables
 saver       = tf.train.Saver()
@@ -70,13 +68,13 @@ saver       = tf.train.Saver()
 print("Define network computation process ... Done!")
 
 # Launch the graph
-print("Start generation!")
+print("Start evaluation!")
 
 with tf.Session() as sess:
 
 	saver.restore(sess, model_path)
 
-	f = open("../data/sentences.continuation", 'r')
+	f = open("../data/sentences.eval", 'r')
 	line = f.readline()
 
 	while line:
@@ -89,30 +87,25 @@ with tf.Session() as sess:
 				code.append(vocabulary[word])
 			else:
 				code.append(vocabulary["<unk>"])
+		code.append(vocabulary["<eos>"])
 
-		for idx in code:
+		psum = 0.0
+		for i in range(len(code) - 1):
 			if step == 1:
-				feed_dict = {x: np.array([idx])}
+				feed_dict = {x: np.array([code[i]])}
 			else:
-				feed_dict = {x: np.array([idx]), init_state: state_feed}
+				feed_dict = {x: np.array([code[i]]), init_state: state_feed}
 
-			next_idx = sess.run(next_word, feed_dict = feed_dict)
+			prob = sess.run(tf.nn.softmax(pred_logits), feed_dict = feed_dict)
 			state_feed = sess.run(final_state, feed_dict = feed_dict)
-			step += 1
+			
+			psum += np.log(prob[0, code[i + 1]])
+		
+		perp = 2 ** (-psum / len(code))
+		print(perp)
 
-		next_words = ""
-		for i in range(len(code), seq_length):
-			feed_dict = {x: next_idx, init_state: state_feed}
-			next_idx = sess.run(next_word, feed_dict = feed_dict)
-			state_feed = sess.run(final_state, feed_dict = feed_dict)
-			if next_idx[0] != vocabulary["<eos>"]:
-				next_words += look_up[next_idx[0]]
-				next_words += " "
-			else:
-				break
-		print(line.strip() + " @@@ " + next_words)
 		line = f.readline()
 
 	f.close()
 
-	print("Prediction finished!")
+	print("Evaluation finished!")

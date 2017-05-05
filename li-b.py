@@ -77,7 +77,7 @@ x = tf.placeholder(tf.int32, [batch_size, seq_length       ])
 y = tf.placeholder(tf.int32, [batch_size * (seq_length - 1)])
 
 # Define word embeddings, output weight and output bias
-emb_weight  = tf.get_variable("emb_weight", [vocab_size, emb_size  ], dtype = tf.float32, trainable = False)
+emb_weight  = tf.get_variable("emb_weight", [vocab_size, emb_size  ], dtype = tf.float32, trainable = True)
 out_weight  = tf.get_variable("out_weight", [state_size, vocab_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 out_bias    = tf.get_variable("out_bias"  , [vocab_size]            , dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 
@@ -217,8 +217,6 @@ with tf.Session() as sess:
 
 	print("Optimization Finished!")
 	save_path = saver.save(sess, "../li-b-final.ckpt")
-	model_path = "../final-lib.ckpt"
-	save_path = saver.save(sess, model_path)
 	print("Model saved in file: %s" % save_path)
 
 f.close()
