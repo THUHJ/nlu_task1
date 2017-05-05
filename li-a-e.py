@@ -20,7 +20,7 @@ batch_size  = 1
 vocab_size  = 20000 # vocabulary size
 emb_size    = 100   # word embedding size
 state_size  = 512   # hidden state size
-model_path  = "../li-a-4800.ckpt"
+model_path  = "../li-a-5400.ckpt"
 
 # Construct vocabulary index dictionary
 vocabulary = {}
@@ -90,6 +90,7 @@ with tf.Session() as sess:
 		code.append(vocabulary["<eos>"])
 
 		psum = 0.0
+		pnum = 0.0
 		for i in range(len(code) - 1):
 			if step == 1:
 				feed_dict = {x: np.array([code[i]])}
@@ -100,8 +101,9 @@ with tf.Session() as sess:
 			state_feed = sess.run(final_state, feed_dict = feed_dict)
 			
 			psum += np.log(prob[0, code[i + 1]])
+			pnum += 1.0
 		
-		perp = 2 ** (-psum / len(code))
+		perp = 2 ** (-psum / pnum)
 		print(perp)
 
 		line = f.readline()
