@@ -20,7 +20,7 @@ batch_size  = 1
 vocab_size  = 20000 # vocabulary size
 emb_size    = 100   # word embedding size
 state_size  = 512   # hidden state size
-model_path  ="../li-a-2400.ckpt"
+model_path  ="../3e-3/li-b-51000.ckpt"
 
 # Construct vocabulary index dictionary
 vocabulary = {}
@@ -75,7 +75,7 @@ with tf.Session() as sess:
 
 	saver.restore(sess, model_path)
 
-	f = open("../data/sentences.eval", 'r')
+	f = open("../data/sentences.test", 'r')
 	line = f.readline()
 
 	while line:

@@ -16,13 +16,12 @@ import random
 print("Import packages ... Done!")
 
 # Set network parameters
-batch_size   = 1
-vocab_size   = 20000 # vocabulary size
-emb_size     = 100   # word embedding size
-seq_length   = 20    # sequence length
-state_size   = 1024   # hidden state size
-softmax_size = 512   # softmax size
-model_path   = "../model/li-c-15600.ckpt"
+batch_size  = 1
+vocab_size  = 20000 # vocabulary size
+emb_size    = 100   # word embedding size
+seq_length  = 20    # sequence length
+state_size  = 512   # hidden state size
+model_path  = "../3e-3/li-b-51000.ckpt"
 
 # Construct vocabulary index dictionary
 vocabulary = {}
@@ -43,10 +42,9 @@ print("Load dictionary ... Done!")
 x = tf.placeholder(tf.int32, [batch_size])
 
 # Define word embeddings, output weight and output bias
-emb_weight  = tf.get_variable("emb_weight", [vocab_size, emb_size    ], dtype = tf.float32, trainable = False)
-out_weight  = tf.get_variable("out_weight", [softmax_size, vocab_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
-out_bias    = tf.get_variable("out_bias"  , [vocab_size              ], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
-p_weight    = tf.get_variable("p_weight"  , [state_size, softmax_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+emb_weight  = tf.get_variable("emb_weight", [vocab_size, emb_size  ], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+out_weight  = tf.get_variable("out_weight", [state_size, vocab_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+out_bias    = tf.get_variable("out_bias"  , [vocab_size]            , dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 
 # Define LSTM cell weights and biases
 with tf.variable_scope("basic_lstm_cell"):
@@ -64,8 +62,7 @@ state       = init_state
 with tf.variable_scope("RNN"):
 	out, state  = lstm_cell(input_emb, state)
 final_state = state
-out_softmax = tf.matmul(out, p_weight)
-pred_logits = tf.matmul(out_softmax, out_weight) + out_bias
+pred_logits = tf.matmul(out, out_weight) + out_bias
 next_word   = tf.argmax(pred_logits, 1)
 
 # Initialize the variables
@@ -104,14 +101,17 @@ with tf.Session() as sess:
 			state_feed = sess.run(final_state, feed_dict = feed_dict)
 			step += 1
 
-		next_words = ""
+		next_words = look_up[next_idx[0]] + " "
 		for i in range(len(code), seq_length):
 			feed_dict = {x: next_idx, init_state: state_feed}
 			next_idx = sess.run(next_word, feed_dict = feed_dict)
 			state_feed = sess.run(final_state, feed_dict = feed_dict)
-			next_words += look_up[next_idx[0]]
-			next_words += " "
-		print(line.strip() + " +++ " + next_words)
+			if next_idx[0] != vocabulary["<eos>"]:
+				next_words += look_up[next_idx[0]]
+				next_words += " "
+			else:
+				break
+		print(line.strip() + " @@@ " + next_words)
 		line = f.readline()
 
 	f.close()
