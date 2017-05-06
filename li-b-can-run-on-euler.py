@@ -20,6 +20,8 @@ learning_rate  = 1e-4  # learning rate
 training_iters = 2e7   # training iters
 clip_norm      = 10.0  # global norm
 disp_step      = 10    # display step
+decay_size     = 1000
+decay_rate     = 0.97
 
 # Set network parameters
 batch_size     = 64    # batch size
@@ -105,6 +107,7 @@ with tf.variable_scope("RNN"):
 		output_unit, state = lstm_cell(input_unit, state)
 		output_seq.append(output_unit)
 output_seq.pop()
+lr = tf.Variable(0.0, trainable=False)
 final_state = state
 output_seq  = tf.reshape(output_seq, [-1, state_size])
 pred_logits = tf.matmul(output_seq, out_weight) + out_bias
@@ -136,6 +139,10 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 	step = 1
 
 	while step * batch_size < training_iters:
+		if (step-1) % (decay_size*batch_size)==0:
+			sess.run(tf.assign(lr, learning_rate * (decay_rate ** ((step-1)/decay_size/batch_size))))
+		
+
 		
 		batch_x = []
 		while len(batch_x) < batch_size:
@@ -218,7 +225,7 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 			"""
 
 		if step % model_save == 0:
-			save_path = saver.save(sess, "../li-b-" + str(step) + ".ckpt")
+			save_path = saver.save(sess, "../"+str(learning_rate)+"-"+str(decay_rate)+"-li-a-" + str(step) + ".ckpt")
 
 		# state_feed = sess.run(final_state, feed_dict = feed_dict)
 		step += 1

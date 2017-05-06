@@ -28,6 +28,8 @@ seq_length     = 30    # sequence length
 state_size     = 512   # hidden state size
 model_save     = 600   # save per number of batches
 NUM_THREADS    = 8
+decay_size     = 1000
+decay_rate     = 0.97
 
 # Construct vocabulary index dictionary
 vocabulary = {}
@@ -78,7 +80,7 @@ with tf.variable_scope("RNN"):
 		output_unit, state = lstm_cell(input_unit, state)
 		output_seq.append(output_unit)
 output_seq.pop()
-
+lr = tf.Variable(0.0, trainable=False)
 final_state = state
 output_seq  = tf.reshape(output_seq, [-1, state_size])
 pred_logits = tf.matmul(output_seq, out_weight) + out_bias
@@ -87,7 +89,7 @@ print("Define network computation process ... Done!")
 
 # Define loss and optimizer
 loss        = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits = pred_logits, labels = y))
-opt_func    = tf.train.AdamOptimizer(learning_rate = learning_rate)
+opt_func    = tf.train.AdamOptimizer(learning_rate = lr)
 grad, var   = zip(*opt_func.compute_gradients(loss))
 grads, _    = tf.clip_by_global_norm(grad, clip_norm)
 optimizer   = opt_func.apply_gradients(zip(grads, var))
@@ -109,6 +111,8 @@ with tf.Session(config = tf.ConfigProto(inter_op_parallelism_threads = NUM_THREA
 	step = 1
 
 	while step * batch_size < training_iters:
+		if (step-1) % (decay_size*batch_size)==0:
+			sess.run(tf.assign(lr, learning_rate * (decay_rate ** ((step-1)/decay_size/batch_size))))
 		
 
 		batch_x = []
@@ -192,7 +196,7 @@ with tf.Session(config = tf.ConfigProto(inter_op_parallelism_threads = NUM_THREA
 			"""
 
 		if step % model_save == 0:
-			save_path = saver.save(sess, "../li-a-" + str(step) + ".ckpt")
+			save_path = saver.save(sess, "../"+str(learning_rate)+"-"+str(decay_rate)+"-li-a-" + str(step) + ".ckpt")
 
 		# state_feed = sess.run(final_state, feed_dict = feed_dict)
 		step += 1
