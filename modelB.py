@@ -16,20 +16,19 @@ from gensim import models
 print("Import packages ... Done!")
 
 # Set learning parameters
-learning_rate  = 0.01  # learning rate
-training_iters = 2e7   # training iters
+learning_rate  = 0.003 # learning rate
+training_iters = 138600*64# training iters
 clip_norm      = 10.0  # global norm
 disp_step      = 10    # display step
 decay_size     = 1000
-decay_rate     = 0.97
+decay_rate     = 1.0
 
 # Set network parameters
 batch_size     = 64    # batch size
 vocab_size     = 20000 # vocabulary size
 emb_size       = 100   # word embedding size
 seq_length     = 30    # sequence length
-state_size     = 1024  # hidden state size
-softmax_size   = 512   # softmax size
+state_size     = 512   # hidden state size
 model_save     = 600   # save per number of batches
 emb_path       = "../data/wordembeddings-dim100.word2vec"
 
@@ -80,10 +79,9 @@ x = tf.placeholder(tf.int32, [batch_size, seq_length       ])
 y = tf.placeholder(tf.int32, [batch_size * (seq_length - 1)])
 
 # Define word embeddings, output weight and output bias
-emb_weight  = tf.get_variable("emb_weight", [vocab_size, emb_size    ], dtype = tf.float32, trainable = True)
-out_weight  = tf.get_variable("out_weight", [softmax_size, vocab_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
-out_bias    = tf.get_variable("out_bias"  , [vocab_size              ], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
-p_weight    = tf.get_variable("p_weight"  , [state_size, softmax_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+emb_weight  = tf.get_variable("emb_weight", [vocab_size, emb_size  ], dtype = tf.float32, trainable = True)
+out_weight  = tf.get_variable("out_weight", [state_size, vocab_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+out_bias    = tf.get_variable("out_bias"  , [vocab_size]            , dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 
 # Define LSTM cell weights and biases
 with tf.variable_scope("basic_lstm_cell"):
@@ -112,8 +110,7 @@ output_seq.pop()
 lr = tf.Variable(0.0, trainable=False)
 final_state = state
 output_seq  = tf.reshape(output_seq, [-1, state_size])
-out_softmax = tf.matmul(output_seq, p_weight)
-pred_logits = tf.matmul(out_softmax, out_weight) + out_bias
+pred_logits = tf.matmul(output_seq, out_weight) + out_bias
 
 print("Define network computation process ... Done!")
 
@@ -132,9 +129,9 @@ print("Define loss, optimizer and evaluate function ... Done!")
 
 # Launch the graph
 print("Start training!")
-out = open("lc-log.txt","w")
+out = open("lb-log.txt","w")
 f = open("../data/sentences.train", 'r')
-NUM_THREADS = 8
+NUM_THREADS=8
 with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,intra_op_parallelism_threads=NUM_THREADS)) as sess:
 
 	sess.run(init)
@@ -144,8 +141,6 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 	while step * batch_size < training_iters:
 		if (step-1) % (decay_size*batch_size)==0:
 			sess.run(tf.assign(lr, learning_rate * (decay_rate ** ((step-1)/decay_size/batch_size))))
-		
-
 		
 		batch_x = []
 		while len(batch_x) < batch_size:
@@ -225,17 +220,16 @@ with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_THREADS,i
 				print("# " + a + "\n")
 				print("@ " + b + "\n")
 				break
-			 """
+			"""
 
-		if step % model_save == 0:
-			save_path = saver.save(sess, "../"+str(learning_rate)+"-"+str(decay_rate)+"-li-a-" + str(step) + ".ckpt")
-
+		# if step % model_save == 0:
+		# 	save_path = saver.save(sess, "../"+str(learning_rate)+"-"+str(decay_rate)+"-li-a-" + str(step) + ".ckpt")
 
 		# state_feed = sess.run(final_state, feed_dict = feed_dict)
 		step += 1
 
 	print("Optimization Finished!")
-	model_path = "final-li-c.ckpt"
+	model_path = "../final-b.ckpt"
 	save_path = saver.save(sess, model_path)
 	print("Model saved in file: %s" % save_path)
 out.close()

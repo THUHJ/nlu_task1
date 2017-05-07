@@ -1,5 +1,5 @@
 # ETH Zurich, Semester S17
-# Natural Language Understanding, Task 1(B) Evaluation
+# Natural Language Understanding, Task 1
 # Team Members: Jie Huang, Yanping Xie, Zuoyue Li
 
 from __future__ import print_function
@@ -16,13 +16,14 @@ import random
 print("Import packages ... Done!")
 
 # Set network parameters
-batch_size  = 1
-vocab_size  = 20000 # vocabulary size
-emb_size    = 100   # word embedding size
-state_size  = 512   # hidden state size
-model_path  = "../model/li-a-135000.ckpt"
-out_file    = "./group6.perplexityA"
-NUM_THREADS = 8
+batch_size   = 1
+vocab_size   = 20000 # vocabulary size
+emb_size     = 100   # word embedding size
+seq_length   = 20    # sequence length
+state_size   = 1024   # hidden state size
+softmax_size = 512   # softmax size
+model_path   = "../modelC.ckpt"
+out_file     = "./group6.continuation"
 
 # Construct vocabulary index dictionary
 vocabulary = {}
@@ -43,9 +44,10 @@ print("Load dictionary ... Done!")
 x = tf.placeholder(tf.int32, [batch_size])
 
 # Define word embeddings, output weight and output bias
-emb_weight  = tf.get_variable("emb_weight", [vocab_size, emb_size  ], dtype = tf.float32, trainable = True)
-out_weight  = tf.get_variable("out_weight", [state_size, vocab_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
-out_bias    = tf.get_variable("out_bias"  , [vocab_size]            , dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+emb_weight  = tf.get_variable("emb_weight", [vocab_size, emb_size    ], dtype = tf.float32, trainable = False)
+out_weight  = tf.get_variable("out_weight", [softmax_size, vocab_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+out_bias    = tf.get_variable("out_bias"  , [vocab_size              ], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+p_weight    = tf.get_variable("p_weight"  , [state_size, softmax_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 
 # Define LSTM cell weights and biases
 with tf.variable_scope("basic_lstm_cell"):
@@ -63,7 +65,9 @@ state       = init_state
 with tf.variable_scope("RNN"):
 	out, state  = lstm_cell(input_emb, state)
 final_state = state
-pred_logits = tf.matmul(out, out_weight) + out_bias
+out_softmax = tf.matmul(out, p_weight)
+pred_logits = tf.matmul(out_softmax, out_weight) + out_bias
+next_word   = tf.argmax(pred_logits, 1)
 
 # Initialize the variables
 saver       = tf.train.Saver()
@@ -71,18 +75,16 @@ saver       = tf.train.Saver()
 print("Define network computation process ... Done!")
 
 # Launch the graph
-print("Start evaluation!")
+print("Start generation!")
 
-n = 1
 out_f = open(out_file, 'w')
-with tf.Session(config = tf.ConfigProto(inter_op_parallelism_threads = NUM_THREADS, intra_op_parallelism_threads = NUM_THREADS)) as sess:
+with tf.Session() as sess:
 
 	saver.restore(sess, model_path)
-	f = open("../data/sentences.test", 'r')
+
+	f = open("../data/sentences.continuation", 'r')
 	line = f.readline()
 
-	avg = 0.0
-	num = 0.0
 	while line:
 
 		step = 1
@@ -93,30 +95,36 @@ with tf.Session(config = tf.ConfigProto(inter_op_parallelism_threads = NUM_THREA
 				code.append(vocabulary[word])
 			else:
 				code.append(vocabulary["<unk>"])
-		code.append(vocabulary["<eos>"])
 
-		psum = 0.0
-		for i in range(len(code) - 1):
+		for idx in code:
 			if step == 1:
-				feed_dict = {x: np.array([code[i]])}
+				feed_dict = {x: np.array([idx])}
 			else:
-				feed_dict = {x: np.array([code[i]]), init_state: state_feed}
+				feed_dict = {x: np.array([idx]), init_state: state_feed}
 
-			prob = sess.run(tf.nn.softmax(pred_logits), feed_dict = feed_dict)
+			next_idx = sess.run(next_word, feed_dict = feed_dict)
 			state_feed = sess.run(final_state, feed_dict = feed_dict)
-			
-			psum += np.log(prob[0, code[i + 1]])
-		
-		perp = 2 ** (-psum / len(code))
-		avg = avg * num / (num + 1) + perp / (num + 1)
-		num += 1.0
-		out_f.write(str(perp) + "\n")
+			step += 1
+
+		next_words = ""
+		if next_idx[0] != vocabulary["<eos>"]:
+			next_words = look_up[next_idx[0]] + " "
+			for i in range(len(code), seq_length):
+				feed_dict = {x: next_idx, init_state: state_feed}
+				next_idx = sess.run(next_word, feed_dict = feed_dict)
+				state_feed = sess.run(final_state, feed_dict = feed_dict)
+				if next_idx[0] != vocabulary["<eos>"]:
+					next_words += look_up[next_idx[0]]
+					next_words += " "
+				else:
+					break
+		a = line.strip() + " " + next_words + "<eos>"
+		out_f.write(a + "\n")
 		out_f.flush()
-		n += 1
-		print(str(n) + ": " + str(avg))
+		print(a)
 		line = f.readline()
 
 	f.close()
 	out_f.close()
 
-	print("Evaluation finished!")
+	print("Prediction finished!")

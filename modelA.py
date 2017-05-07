@@ -15,8 +15,8 @@ import numpy as np
 print("Import packages ... Done!")
 
 # Set learning parameters
-learning_rate  = 0.01  # learning rate
-training_iters = 2e7   # training iters
+learning_rate  = 0.003 # learning rate
+training_iters = 139200*64# training iters
 clip_norm      = 10.0  # global norm
 disp_step      = 10    # display step
 
@@ -29,7 +29,7 @@ state_size     = 512   # hidden state size
 model_save     = 600   # save per number of batches
 NUM_THREADS    = 8
 decay_size     = 1000
-decay_rate     = 0.97
+decay_rate     = 1.0
 
 # Construct vocabulary index dictionary
 vocabulary = {}
@@ -195,14 +195,14 @@ with tf.Session(config = tf.ConfigProto(inter_op_parallelism_threads = NUM_THREA
 				break
 			"""
 
-		if step % model_save == 0:
-			save_path = saver.save(sess, "../"+str(learning_rate)+"-"+str(decay_rate)+"-li-a-" + str(step) + ".ckpt")
+		# if step % model_save == 0:
+		# 	save_path = saver.save(sess, "../"+str(learning_rate)+"-"+str(decay_rate)+"-li-a-" + str(step) + ".ckpt")
 
 		# state_feed = sess.run(final_state, feed_dict = feed_dict)
 		step += 1
 
 	print("Optimization Finished!")
-	model_path = "../final_lia.ckpt"
+	model_path = "../final_a.ckpt"
 	save_path = saver.save(sess, model_path)
 	print("Model saved in file: %s" % save_path)
 out.close()

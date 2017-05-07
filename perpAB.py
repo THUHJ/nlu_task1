@@ -16,15 +16,13 @@ import random
 print("Import packages ... Done!")
 
 # Set network parameters
-batch_size   = 1
-vocab_size   = 20000 # vocabulary size
-emb_size     = 100   # word embedding size
-state_size   = 1024  # hidden state size
-softmax_size = 512   # softmax size
-model_path   = "../model/li-c-101400.ckpt"
-out_file     = "./group6.perplexityC-2"
-NUM_THREADS  = 8
-ttt = 2000
+batch_size  = 1
+vocab_size  = 20000 # vocabulary size
+emb_size    = 100   # word embedding size
+state_size  = 512   # hidden state size
+model_path  = "../modelA.ckpt"
+out_file    = "./group6.perplexityA"
+NUM_THREADS = 8
 
 # Construct vocabulary index dictionary
 vocabulary = {}
@@ -45,10 +43,9 @@ print("Load dictionary ... Done!")
 x = tf.placeholder(tf.int32, [batch_size])
 
 # Define word embeddings, output weight and output bias
-emb_weight  = tf.get_variable("emb_weight", [vocab_size, emb_size    ], dtype = tf.float32, trainable = True)
-out_weight  = tf.get_variable("out_weight", [softmax_size, vocab_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
-out_bias    = tf.get_variable("out_bias"  , [vocab_size              ], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
-p_weight    = tf.get_variable("p_weight"  , [state_size, softmax_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+emb_weight  = tf.get_variable("emb_weight", [vocab_size, emb_size  ], dtype = tf.float32, trainable = True)
+out_weight  = tf.get_variable("out_weight", [state_size, vocab_size], dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
+out_bias    = tf.get_variable("out_bias"  , [vocab_size]            , dtype = tf.float32, initializer = tf.contrib.layers.xavier_initializer())
 
 # Define LSTM cell weights and biases
 with tf.variable_scope("basic_lstm_cell"):
@@ -66,8 +63,7 @@ state       = init_state
 with tf.variable_scope("RNN"):
 	out, state  = lstm_cell(input_emb, state)
 final_state = state
-out_softmax = tf.matmul(out, p_weight)
-pred_logits = tf.matmul(out_softmax, out_weight) + out_bias
+pred_logits = tf.matmul(out, out_weight) + out_bias
 
 # Initialize the variables
 saver       = tf.train.Saver()
@@ -76,23 +72,18 @@ print("Define network computation process ... Done!")
 
 # Launch the graph
 print("Start evaluation!")
-n = 0
+
+n = 1
 out_f = open(out_file, 'w')
 with tf.Session(config = tf.ConfigProto(inter_op_parallelism_threads = NUM_THREADS, intra_op_parallelism_threads = NUM_THREADS)) as sess:
 
 	saver.restore(sess, model_path)
-
 	f = open("../data/sentences.test", 'r')
 	line = f.readline()
 
 	avg = 0.0
 	num = 0.0
 	while line:
-
-		if n < ttt or n > (ttt+999):
-			n += 1
-			line = f.readline()
-			continue
 
 		step = 1
 		words = line.strip().split(' ')
