@@ -20,7 +20,7 @@ batch_size  = 1
 vocab_size  = 20000 # vocabulary size
 emb_size    = 100   # word embedding size
 state_size  = 512   # hidden state size
-model_path  = "../li-a-132600.ckpt"
+model_path  = "../li-a-133800.ckpt"
 out_file    = "./group6.perplexityA"
 NUM_THREADS = 8
 
@@ -110,7 +110,7 @@ with tf.Session(config = tf.ConfigProto(inter_op_parallelism_threads = NUM_THREA
 		perp = 2 ** (-psum / len(code))
 		avg = avg * num / (num + 1) + perp / (num + 1)
 		num += 1.0
-		out_f.write(str(perp))
+		out_f.write(str(perp) + "\n")
 		out_f.flush()
 		n += 1
 		print(str(n) + ": " + str(avg))
