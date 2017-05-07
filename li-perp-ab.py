@@ -20,7 +20,9 @@ batch_size  = 1
 vocab_size  = 20000 # vocabulary size
 emb_size    = 100   # word embedding size
 state_size  = 512   # hidden state size
-model_path  ="../3e-3/li-b-114600.ckpt"
+model_path  = "../li-a-132600.ckpt"
+out_file    = "./group6.perplexityA"
+NUM_THREADS = 8
 
 # Construct vocabulary index dictionary
 vocabulary = {}
@@ -71,7 +73,9 @@ print("Define network computation process ... Done!")
 # Launch the graph
 print("Start evaluation!")
 
-with tf.Session() as sess:
+num = 1
+out_f = open(out_file, 'w')
+with tf.Session(config = tf.ConfigProto(inter_op_parallelism_threads = NUM_THREADS, intra_op_parallelism_threads = NUM_THREADS)) as sess:
 
 	saver.restore(sess, model_path)
 
@@ -107,10 +111,13 @@ with tf.Session() as sess:
 		perp = 2 ** (-psum / len(code))
 		avg = avg * num / (num + 1) + perp / (num + 1)
 		num += 1.0
-		print(perp, avg)
+		out_f.write(str(perp))
+		out_f.flush()
+		print(num, avg)
 
 		line = f.readline()
 
 	f.close()
+	out_f.close()
 
 	print("Evaluation finished!")
