@@ -20,7 +20,7 @@ batch_size  = 1
 vocab_size  = 20000 # vocabulary size
 emb_size    = 100   # word embedding size
 state_size  = 512   # hidden state size
-model_path  ="../3e-3/li-b-51000.ckpt"
+model_path  ="../3e-3/li-b-114600.ckpt"
 
 # Construct vocabulary index dictionary
 vocabulary = {}
@@ -78,6 +78,8 @@ with tf.Session() as sess:
 	f = open("../data/sentences.test", 'r')
 	line = f.readline()
 
+	avg = 0.0
+	num = 0.0
 	while line:
 
 		step = 1
@@ -103,7 +105,9 @@ with tf.Session() as sess:
 			psum += np.log(prob[0, code[i + 1]])
 		
 		perp = 2 ** (-psum / len(code))
-		print(perp)
+		avg = avg * num / (num + 1) + perp / (num + 1)
+		num += 1.0
+		print(perp, avg)
 
 		line = f.readline()
 

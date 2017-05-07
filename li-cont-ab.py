@@ -21,7 +21,7 @@ vocab_size  = 20000 # vocabulary size
 emb_size    = 100   # word embedding size
 seq_length  = 20    # sequence length
 state_size  = 512   # hidden state size
-model_path  = "../3e-3/li-b-51000.ckpt"
+model_path  = "../3e-3/li-b-114600.ckpt"
 
 # Construct vocabulary index dictionary
 vocabulary = {}

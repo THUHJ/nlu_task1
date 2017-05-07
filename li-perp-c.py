@@ -81,6 +81,8 @@ with tf.Session() as sess:
 	f = open("../data/sentences.test", 'r')
 	line = f.readline()
 
+	avg = 0.0
+	num = 0.0
 	while line:
 
 		step = 1
@@ -106,7 +108,9 @@ with tf.Session() as sess:
 			psum += np.log(prob[0, code[i + 1]])
 		
 		perp = 2 ** (-psum / len(code))
-		print(perp)
+		avg = avg * num / (num + 1) + perp / (num + 1)
+		num += 1.0
+		print(perp, avg)
 
 		line = f.readline()
 
