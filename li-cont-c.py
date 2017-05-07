@@ -22,7 +22,8 @@ emb_size     = 100   # word embedding size
 seq_length   = 20    # sequence length
 state_size   = 1024   # hidden state size
 softmax_size = 512   # softmax size
-model_path   = "../3e-3/li-c-36600.ckpt"
+model_path   = "../model/li-c-101400.ckpt"
+out_file     = "./group6.continuation"
 
 # Construct vocabulary index dictionary
 vocabulary = {}
@@ -76,6 +77,7 @@ print("Define network computation process ... Done!")
 # Launch the graph
 print("Start generation!")
 
+out_f = open(out_file, 'w')
 with tf.Session() as sess:
 
 	saver.restore(sess, model_path)
@@ -104,19 +106,25 @@ with tf.Session() as sess:
 			state_feed = sess.run(final_state, feed_dict = feed_dict)
 			step += 1
 
-		next_words = look_up[next_idx[0]] + " "
-		for i in range(len(code), seq_length):
-			feed_dict = {x: next_idx, init_state: state_feed}
-			next_idx = sess.run(next_word, feed_dict = feed_dict)
-			state_feed = sess.run(final_state, feed_dict = feed_dict)
-			if next_idx[0] != vocabulary["<eos>"]:
-				next_words += look_up[next_idx[0]]
-				next_words += " "
-			else:
-				break
-		print(line.strip() + " @@@ " + next_words)
+		next_words = ""
+		if next_idx[0] != vocabulary["<eos>"]:
+			next_words = look_up[next_idx[0]] + " "
+			for i in range(len(code), seq_length):
+				feed_dict = {x: next_idx, init_state: state_feed}
+				next_idx = sess.run(next_word, feed_dict = feed_dict)
+				state_feed = sess.run(final_state, feed_dict = feed_dict)
+				if next_idx[0] != vocabulary["<eos>"]:
+					next_words += look_up[next_idx[0]]
+					next_words += " "
+				else:
+					break
+		a = line.strip() + " " + next_words + "<eos>"
+		out_f.write(a + "\n")
+		out_f.flush()
+		print(a)
 		line = f.readline()
 
 	f.close()
+	out_f.close()
 
 	print("Prediction finished!")

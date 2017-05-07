@@ -21,7 +21,7 @@ vocab_size   = 20000 # vocabulary size
 emb_size     = 100   # word embedding size
 state_size   = 1024  # hidden state size
 softmax_size = 512   # softmax size
-model_path   = "../model/li-c-98400.ckpt"
+model_path   = "../model/li-c-101400.ckpt"
 out_file     = "./group6.perplexityC"
 NUM_THREADS  = 8
 
