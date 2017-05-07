@@ -20,7 +20,7 @@ batch_size  = 1
 vocab_size  = 20000 # vocabulary size
 emb_size    = 100   # word embedding size
 state_size  = 512   # hidden state size
-model_path  = "../li-b-133800.ckpt"
+model_path  = "../model/li-b-134400.ckpt"
 out_file    = "./group6.perplexityB"
 NUM_THREADS = 8
 
