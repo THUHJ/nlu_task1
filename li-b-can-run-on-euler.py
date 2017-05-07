@@ -16,7 +16,7 @@ from gensim import models
 print("Import packages ... Done!")
 
 # Set learning parameters
-learning_rate  = 1e-4  # learning rate
+learning_rate  = 0.01  # learning rate
 training_iters = 2e7   # training iters
 clip_norm      = 10.0  # global norm
 disp_step      = 10    # display step

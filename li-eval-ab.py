@@ -20,7 +20,7 @@ batch_size  = 1
 vocab_size  = 20000 # vocabulary size
 emb_size    = 100   # word embedding size
 state_size  = 512   # hidden state size
-model_path  ="../li-a-2400.ckpt"
+model_path  ="../model4/li-b-8400.ckpt"
 
 # Construct vocabulary index dictionary
 vocabulary = {}
@@ -70,12 +70,13 @@ print("Define network computation process ... Done!")
 
 # Launch the graph
 print("Start evaluation!")
-
+summ = 0.0
+n = 0
 with tf.Session() as sess:
 
 	saver.restore(sess, model_path)
 
-	f = open("../data/sentences.eval", 'r')
+	f = open("../data/sentences_test", 'r')
 	line = f.readline()
 
 	while line:
@@ -103,10 +104,19 @@ with tf.Session() as sess:
 			psum += np.log(prob[0, code[i + 1]])
 		
 		perp = 2 ** (-psum / len(code))
+
+
+		n=n+1
+		print (n)
 		print(perp)
+
+		summ +=perp 
+		print (summ/n)
+
 
 		line = f.readline()
 
 	f.close()
 
 	print("Evaluation finished!")
+print (summ/n)

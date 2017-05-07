@@ -21,7 +21,7 @@ vocab_size   = 20000 # vocabulary size
 emb_size     = 100   # word embedding size
 state_size   = 1024   # hidden state size
 softmax_size = 512   # softmax size
-model_path   = "../li-c-3600.ckpt"
+model_path   = "../model4/0.001-0.97-li-c-37200.ckpt"
 
 # Construct vocabulary index dictionary
 vocabulary = {}
@@ -73,7 +73,8 @@ print("Define network computation process ... Done!")
 
 # Launch the graph
 print("Start evaluation!")
-
+n=0
+sum=0.0
 with tf.Session() as sess:
 
 	saver.restore(sess, model_path)
@@ -106,7 +107,9 @@ with tf.Session() as sess:
 			psum += np.log(prob[0, code[i + 1]])
 		
 		perp = 2 ** (-psum / len(code))
-		print(perp)
+		sum+=perp
+		n+=1
+		print(sum/n)
 
 		line = f.readline()
 
