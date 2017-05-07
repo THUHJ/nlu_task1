@@ -73,12 +73,11 @@ print("Define network computation process ... Done!")
 # Launch the graph
 print("Start evaluation!")
 
-num = 1
+n = 1
 out_f = open(out_file, 'w')
 with tf.Session(config = tf.ConfigProto(inter_op_parallelism_threads = NUM_THREADS, intra_op_parallelism_threads = NUM_THREADS)) as sess:
 
 	saver.restore(sess, model_path)
-
 	f = open("../data/sentences.test", 'r')
 	line = f.readline()
 
@@ -113,8 +112,8 @@ with tf.Session(config = tf.ConfigProto(inter_op_parallelism_threads = NUM_THREA
 		num += 1.0
 		out_f.write(str(perp))
 		out_f.flush()
-		print(num, avg)
-
+		n += 1
+		print(str(n) + ": " + str(avg))
 		line = f.readline()
 
 	f.close()

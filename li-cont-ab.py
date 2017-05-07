@@ -21,7 +21,11 @@ vocab_size  = 20000 # vocabulary size
 emb_size    = 100   # word embedding size
 seq_length  = 20    # sequence length
 state_size  = 512   # hidden state size
+<<<<<<< HEAD:li-gen-ab.py
+model_path  = "../model3/li-a-57600.ckpt"
+=======
 model_path  = "../3e-3/li-b-114600.ckpt"
+>>>>>>> 903fac788d2577af1fbe71546b7e45d4e75cd582:li-cont-ab.py
 
 # Construct vocabulary index dictionary
 vocabulary = {}
