@@ -22,8 +22,9 @@ emb_size     = 100   # word embedding size
 state_size   = 1024  # hidden state size
 softmax_size = 512   # softmax size
 model_path   = "../model/li-c-101400.ckpt"
-out_file     = "./group6.perplexityC"
+out_file     = "./group6.perplexityC-2"
 NUM_THREADS  = 8
+ttt = 2000
 
 # Construct vocabulary index dictionary
 vocabulary = {}
@@ -87,6 +88,11 @@ with tf.Session(config = tf.ConfigProto(inter_op_parallelism_threads = NUM_THREA
 	avg = 0.0
 	num = 0.0
 	while line:
+
+		if n < ttt or n > (ttt+999):
+			n += 1
+			line = f.readline()
+			continue
 
 		step = 1
 		words = line.strip().split(' ')
