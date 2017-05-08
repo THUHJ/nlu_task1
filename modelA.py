@@ -169,7 +169,7 @@ with tf.Session(config = tf.ConfigProto(inter_op_parallelism_threads = NUM_THREA
 			for i in range(seq_length - 1):
 				for j in range(batch_size):
 					if batch_m[i, j] != vocabulary["<pad>"]:
-						psum[j] += np.log(prob[i, j, batch_m[i, j]])
+						psum[j] += np.log2(prob[i, j, batch_m[i, j]])
 						pnum[j] += 1.0
 			perp_list = [2 ** (-psum[i] / pnum[i]) for i in range(batch_size)]
 			perp = sum(perp_list) / len(perp_list)
